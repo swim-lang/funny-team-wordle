@@ -1,6 +1,7 @@
 const WORD_LENGTH = 5;
 const MAX_ATTEMPTS = 6;
 const STORAGE_KEY = "funny-team-wordle-v2";
+const TRIVIA_REVEAL_KEY = "funny-team-wordle-trivia-reveal-date";
 const DAILY_EPOCH = "2026-04-26";
 const TEAM_MEMBERS = ["Kira", "Sean", "Logan", "Alexis"];
 const WEATHER_LOCATIONS = {
@@ -58,6 +59,38 @@ const FALLBACK_HEADLINES = [
   { source: "TMZ", title: "Celebrity chaos pending refresh", link: "https://www.tmz.com/", summary: "TMZ headlines are taking a dramatic little lap before loading.", body: "TMZ headlines are taking a dramatic little lap before loading." },
   { source: "Google News", title: "Top stories are warming up", link: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", summary: "Google News is loading the main headlines.", body: "Google News is loading the main headlines." },
   { source: "Denver Local", title: "Denver local headlines loading", link: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", summary: "Denver-area headlines are getting in line.", body: "Denver-area headlines are getting in line." },
+];
+const DAILY_TRIVIA = [
+  { question: "How many bones are in a giraffe's neck?", answer: "Seven" },
+  { question: "What is a dab of toothpaste called?", answer: "Nurdle" },
+  { question: "What is the smallest nation?", answer: "Vatican City" },
+  { question: "Who was on the $10,000 bill?", answer: "Salmon P. Chase" },
+  { question: "What is the largest desert?", answer: "Antarctica" },
+  { question: "What horror series has Michael Myers?", answer: "Halloween" },
+  { question: "Who has hosted the most Olympics?", answer: "United States" },
+  { question: "Pete Best drummed for what band?", answer: "The Beatles" },
+  { question: "Ornithology is the study of what?", answer: "Birds" },
+  { question: "Which males give birth?", answer: "Seahorses" },
+  { question: "Blue Ribbon Sports became what?", answer: "Nike" },
+  { question: "Where is the smallest bone?", answer: "Ear" },
+  { question: "Who produces the most coffee?", answer: "Brazil" },
+  { question: "First woman in the Rock Hall?", answer: "Aretha Franklin" },
+  { question: "Which planet has the longest day?", answer: "Venus" },
+  { question: "How many brains does an octopus have?", answer: "Nine" },
+  { question: "What food does not expire?", answer: "Honey" },
+  { question: "Which countries share the longest border?", answer: "U.S. and Canada" },
+  { question: "What is America's oldest soft drink?", answer: "Dr. Pepper" },
+  { question: "What did the first vending machine sell?", answer: "Holy water" },
+  { question: "What is atop the Supreme Court?", answer: "Basketball court" },
+  { question: "Which fruit has seeds outside?", answer: "Strawberries" },
+  { question: "What is the rarest M&M color?", answer: "Brown" },
+  { question: "Which state borders only one state?", answer: "Maine" },
+  { question: "What was the first toy advertised on TV?", answer: "Mr. Potato Head" },
+  { question: "What bones do newborns lack?", answer: "Kneecaps" },
+  { question: "What is Cookie Monster's real name?", answer: "Sid" },
+  { question: "How much skin do we lose yearly?", answer: "About 1.5 lbs" },
+  { question: "What was Walt Disney afraid of?", answer: "Mice" },
+  { question: "What are people who love eating ice called?", answer: "Pagophagiacs" },
 ];
 
 const ANSWER_POOL = `CHAOS FERAL PETTY SALTY TOXIC TIPSY VODKA TWERK DRAMA PANIC SWEAT CURSE HEXED COVEN OUIJA CRYPT RABID MANIC MOODY SPITE SAUCY SNARK WRECK CRASH VEXED JUICY MESSY GRIFT YIKES WOOZY SHADY CRAVE WORST ROAST GUILT SHAME DOOMY ZESTY SASSY HAZED RAGER FROTH SNEER SNIDE BRASH WEIRD AWFUL PISSY BOOZY GRUMP ZONED HYPED LURID BITCH FUCKS SHITS DILDO BOOBS BONER KINKY PERVY HORNY ABHOR ABIDE ABUSE ACHES ACIDS ACORN ACRID ACTOR ADIEU ADMIN ADMIT ADOPT ADORE ADULT AGENT AGONY ALARM ALBUM ALIEN ALIVE ALLOY ALONE ALTER AMASS AMAZE AMBER AMBLE AMEND AMONG AMUSE ANGER ANGST ANNOY ANTIC ANVIL AORTA APART APPLE APPLY APRON ARGUE ARISE ARSON ARTSY ASIDE ASKEW ASSET AUDIO AUDIT AVERT AVOID AWARD AWARE AXIOM BACON BADGE BADLY BAGEL BAKER BANAL BANJO BARGE BASIC BASIL BASIN BATCH BATHE BEACH BEARD BEAST BEFIT BEGUN BEING BELCH BELLY BELOW BENCH BERTH BINGE BIRTH BLACK BLADE BLAME BLAND BLANK BLARE BLAST BLEAK BLEAT BLEED BLEEP BLEND BLESS BLIMP BLIND BLINK BLISS BLITZ BLOAT BLOCK BLOKE BLOOD BLOOM BLOWN BLUER BLUFF BLUNT BLURB BLURT BLUSH BOAST BONEY BONUS BOOST BOOZE BOSSY BOTCH BOUGH BOUND BOWEL BRAIN BRAKE BRAND BRAVE BRAWL BREAD BREAK BRIBE BRICK BRIDE BRIEF BRINE BRING BRINK BROAD BROIL BROKE BROOM BROTH BROWN BRUNT BRUSH BRUTE BUDDY BUDGE BUGGY BUILD BULGE BULLY BUNCH BURLY BURNT BURST BUTCH BUYER CABIN CABLE CACHE CACTI CAGED CANDY CANNY CANOE CANON CAPER CARGO CARRY CARVE CATCH CATER CAUSE CEDAR CHAFE CHAIN CHAIR CHALK CHAMP CHANT CHARD CHARM CHART CHASE CHASM CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHIEF CHILD CHILL CHIME CHINA CHIRP CHOIR CHOKE CHOMP CHORD CHORE CHOSE CHUCK CHUMP CHUNK CHURN CHUTE CIDER CINCH CIVIC CIVIL CLAIM CLAMP CLASH CLASP CLEAN CLEAR CLEAT CLEFT CLERK CLICK CLIFF CLIMB CLING CLINK CLOAK CLOCK CLONE CLOSE CLOTH CLOUD CLOVE CLOWN CLUCK CLUMP COACH COAST COBRA COCOA COLON COMET COMFY COMIC COMMA CONDO CONIC COUCH COUGH COULD COUNT COURT COVER COWER CRACK CRAFT CRAMP CRANE CRANK CRASS CRATE CRAWL CRAZE CRAZY CREAK CREAM CREDO CREEP CREPE CREPT CREST CRICK CRIED CRIME CRIMP CRISP CROAK CRONE CROOK CROSS CROUP CROWD CROWN CRUDE CRUEL CRUMB CRUSH CRUST CUBIC CURVE CYCLE CYNIC DADDY DAISY DANCE DANDY DATED DEATH DEBIT DEBUG DECAY DECOR DEFER DELAY DELTA DEMON DENSE DEPTH DERBY DETOX DIARY DICEY DITCH DITTO DIZZY DODGE DOING DOUBT DOUGH DOWRY DOZEN DRAFT DRAIN DRANK DRAPE DREAD DREAM DRESS DRIER DRIFT DRINK DRIVE DROLL DROWN DRUNK DRYLY DUMPY DUSTY EAGER EARLY EARTH EATEN EERIE EIGHT ELATE ELBOW ELDER ELECT ELITE ELOPE EMPTY ENACT ENJOY ENNUI ENSUE ENTER EPOCH EQUAL ERROR ERUPT ESSAY ETHER ETHIC EVADE EVENT EVERY EVOKE EXACT EXILE EXIST EXTRA FABLE FANCY FATAL FAULT FAVOR FEAST FELON FETCH FEVER FICUS FIERY FIGHT FINAL FINCH FIRED FIRST FIZZY FLAIR FLAKE FLAME FLARE FLASH FLASK FLEET FLESH FLICK FLING FLIRT FLOAT FLOOD FLOOR FLOSS FLOUR FLUNK FLUSH FOCUS FOLLY FORCE FORGE FORGO FORTH FOUND FOYER FRAIL FRAME FRAUD FREAK FREED FRESH FRIAR FRIED FRISK FROCK FROST FROWN FUDGE FUNGI FUNKY FUROR FUSSY FUZZY GAFFE GASSY GAUDY GAVEL GAWKY GHOST GIANT GIDDY GIVEN GLARE GLASS GLAZE GLOAT GLOOM GLORY GLOVE GLYPH GNASH GONER GOOEY GOOFY GRACE GRADE GRAFT GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASS GRATE GRAVE GRAVY GRAZE GREAT GREED GRIEF GRIME GRIMY GRIND GROAN GROOM GROPE GROSS GROUP GROUT GROVE GROWL GUARD GUEST GUIDE GUSTO HABIT HAIRY HAPPY HARDY HARSH HASTE HATER HAUNT HAVOC HAZEL HEART HEATH HEAVE HEIST HELIX HELLO HENCE HERON HINGE HIPPO HITCH HOARD HOBBY HOMER HONEY HONOR HORDE HORSE HOTEL HOTLY HOUND HOUSE HUMAN HUMID HUMOR HURRY HUSKY HUTCH ICILY IDIOM IDIOT IMAGE IMBUE IMPLY INANE INBOX INDEX INFER INPUT INTER INTRO IRATE IRONY ISLET ITCHY IVORY JAZZY JELLY JERKY JETTY JOINT JOLLY JUDGE JUICE JUMBO JUMPY JUNKY KAPPA KARMA KAYAK KEBAB KHAKI KIOSK KNEEL KNIFE KNOCK KNOLL KNOWN KOALA LABEL LAGER LANCE LANKY LAPSE LARGE LARVA LATCH LATER LATTE LAUGH LAYER LEACH LEAKY LEARN LEASE LEECH LEERY LEFTY LEGAL LEMON LEVEL LEVER LIGHT LIKEN LILAC LIMBO LIMIT LINEN LINGO LIVER LOATH LOBBY LOCAL LOCUS LODGE LOFTY LOGIC LOOPY LOSER LOUSE LOVER LOWER LOWLY LOYAL LUCID LUCKY LUNAR LUNCH LUSTY LYING MACRO MADAM MAGIC MAGMA MAJOR MAMBO MANIA MANOR MAPLE MARCH MARRY MARSH MATCH MAUVE MAXIM MAYBE MEATY MEDAL MERCY MERGE MERIT MERRY METAL MICRO MIGHT MIMIC MINOR MINTY MINUS MIRTH MISER MISSY MOCHA MODEL MOGUL MOIST MOLAR MONEY MONTH MORAL MORON MOTEL MOTOR MOUNT MOURN MOUSE MOUTH MOVIE MOWER MUDDY MULCH MUMMY MUNCH MURAL MURKY MUSHY MUSIC MUSTY NADIR NASTY NATAL NERDY NEVER NEWER NICER NIGHT NINJA NOBLE NOISE NOISY NORTH NOSEY NOTCH NOVEL NUDGE NURSE NUTTY NYMPH OBESE OCCUR OCEAN OFFER OFTEN OLDER OLIVE OMEGA ONION ONSET OPERA OPIUM ORBIT ORDER ORGAN OTHER OUGHT OUNCE OUTER OVARY OWNER OXIDE PAINT PANEL PAPER PARRY PARTY PASTA PATCH PAUSE PAYEE PEACH PEARL PECAN PEDAL PENAL PENNE PHASE PHONE PHOTO PIANO PICKY PIECE PIETY PILOT PINCH PINKY PIOUS PITHY PIVOT PIXEL PIZZA PLACE PLAID PLAIN PLANE PLANK PLANT PLATE PLAZA PLEAD PLEAT PLUCK PLUMB PLUMP PLUSH POESY POINT POISE POKER POLAR POLKA POUND POWER PRANK PRESS PRICE PRICK PRIDE PRIME PRINT PRIOR PRISM PRIVY PRIZE PROBE PRONE PROOF PROUD PROVE PROWL PROXY PRUDE PSALM PULPY PUNCH PUPPY PURGE PUSHY QUAKE QUALM QUEEN QUERY QUEST QUEUE QUICK QUIET QUILL QUIRK QUITE QUOTA QUOTE RACER RADAR RADIO RALLY RANCH RANDY RANGE RAPID RATIO RAVEN REACT READY REALM REBEL RECAP RECUR REDDY REIGN RELAX RELIC REMIT RENEW REPEL REPLY RESET RETRO RHINO RIDER RIDGE RIFLE RIGHT RIGID RINSE RIPEN RISEN RISKY RIVAL RIVER ROACH ROBIN ROCKY RODEO ROGUE ROOMY ROOST ROTOR ROUGE ROUGH ROUND ROUSE ROUTE ROYAL RUDDY RUGBY RULER RUMBA RURAL RUSTY SADLY SALON SALSA SAUCE SAVVY SCALE SCALP SCAMP SCANT SCARE SCARF SCARY SCENE SCENT SCOFF SCOLD SCONE SCOOP SCOPE SCORE SCORN SCOUR SCOUT SCRAM SCRAP SCREW SCRUB SEDAN SEEDY SENSE SEPIA SERUM SERVE SEVEN SEVER SHACK SHADE SHAKE SHANK SHAPE SHARE SHARK SHARP SHAVE SHAWL SHEAR SHEEN SHEET SHELF SHELL SHINE SHINY SHIRE SHIRK SHIRT SHOAL SHOCK SHONE SHOOT SHORE SHORT SHOUT SHOVE SHRED SHREW SHRUB SHRUG SIEGE SIEVE SIGHT SILKY SILLY SINCE SIREN SIXTH SIXTY SKATE SKEIN SKILL SKIMP SKIRT SKULK SKULL SLACK SLAIN SLANG SLANT SLASH SLATE SLEEK SLEEP SLEET SLICE SLICK SLIME SLIMY SLING SLINK SLOPE SLOSH SLOTH SLUMP SLUNG SLUSH SMACK SMALL SMART SMASH SMEAR SMELL SMELT SMILE SMIRK SMITE SMITH SMOCK SMOKE SMOKY SMOTE SNACK SNAIL SNAKE SNARE SNARL SNEAK SNIFF SNIPE SNOOP SNORE SNORT SNOUT SNOWY SOAPY SOBER SOLAR SOLID SOLVE SONAR SONIC SORRY SOUND SOUTH SPACE SPADE SPANK SPARE SPARK SPASM SPAWN SPEAK SPEAR SPECK SPEED SPELL SPEND SPENT SPICE SPICY SPIED SPIEL SPIKE SPIKY SPILL SPINE SPINY SPIRE SPLAT SPLIT SPOIL SPOKE SPOOF SPOOK SPOON SPORE SPORT SPOUT SPRAY SPREE SPRIG SPUNK SPURN SQUAD SQUAT STACK STAFF STAGE STAIN STALK STAMP STAND STANK STARE STARK START STASH STATE STEAD STEAK STEAL STEAM STEEL STEEP STEER STICK STIFF STILL STING STINK STINT STOCK STOIC STOMP STONE STOOL STOOP STORE STORK STORM STORY STOUT STOVE STRAP STRAW STRIP STRUT STUCK STUDY STUFF STUMP STUNG STUNK STUNT STYLE SUGAR SUITE SULKY SUNNY SUPER SURER SURGE SURLY SUSHI SWAMP SWARM SWEAR SWEEP SWEET SWELL SWEPT SWIFT SWILL SWINE SWING SWIRL SWORD TABBY TABLE TABOO TACIT TACKY TANGO TANGY TAPER TARDY TAROT TASTE TASTY TATTY TAUNT TEACH TEARY TEASE TEMPO TENSE TENTH TEPID TERSE TESTY THANK THEFT THEME THERE THESE THICK THIEF THIGH THING THINK THIRD THORN THOSE THREE THREW THROB THROW THUMB THUMP TIDAL TIGER TIGHT TILDE TIMER TIMID TITAN TITLE TOAST TODAY TOKEN TONAL TONIC TOOTH TOPAZ TOPIC TORCH TORSO TOTAL TOUCH TOUGH TRACE TRACK TRACT TRADE TRAIL TRAIN TRAIT TRAMP TRASH TREAD TREAT TREND TRIAD TRIAL TRIBE TRICK TRIED TRIPE TRITE TROOP TROPE TROUT TRUCE TRUCK TRUER TRULY TRUNK TRUST TRUTH TULIP TUMMY TWEAK TWEED TWEET TWICE TWINE TWIRL TWIST UDDER ULTRA UMBRA UNARM UNCLE UNCUT UNDER UNDID UNFED UNFIT UNIFY UNION UNITE UNITY UNMET UNSET UNTIE UNTIL UNWED UNZIP UPPER UPSET URBAN URINE USAGE USHER USUAL USURP UTTER VAGUE VALET VALID VALOR VALUE VALVE VAPID VAPOR VAULT VAUNT VENOM VENUE VERGE VERSE VERVE VIDEO VIGIL VIGOR VILLA VINYL VIPER VIRAL VIRUS VISIT VISOR VISTA VITAL VIVID VIXEN VOGUE VOICE VOILA VOMIT VOTER VOUCH VOWEL VYING WACKY WAFER WAGER WAGON WAIST WAIVE WALTZ WARTY WASTE WATCH WATER WAVER WEARY WEAVE WEDGE WEEDY WEIGH WELCH WELSH WHACK WHALE WHARF WHEAT WHEEL WHERE WHICH WHIFF WHILE WHINE WHINY WHIRL WHISK WHITE WHOLE WHOOP WHOSE WIDEN WIDER WIDOW WIDTH WIELD WIGHT WILLY WINCE WINCH WINDY WISER WITCH WITTY WOKEN WOMAN WOMEN WORDY WORLD WORRY WORSE WORTH WOULD WOUND WOVEN WRACK WRATH WREAK WREST WRING WRIST WRITE WRONG WROTE WRUNG WRYLY YACHT YEARN YEAST YIELD YOUNG YOUTH ZEBRA`.split(/\s+/);
@@ -153,6 +186,7 @@ const EMOJIS = ["😀", "😎", "🤠", "🤖", "👻", "🧙", "🥸", "😈", 
 const KEYS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 const DOODLE_COLORS = ["#111111", "#ff5c5c", "#68d8ff", "#72e06a", "#ffd24a", "#ff7ab8"];
 const DOODLE_SYNC_KEY = "funny-team-wordle-doodles-sync";
+const GAME_SYNC_KEY = "funny-team-wordle-game-sync";
 const ARTICLE_IMAGE_CACHE = new Map();
 const WEATHER_CACHE = new Map();
 let activePreviewItem = null;
@@ -162,6 +196,7 @@ let doodleColor = DOODLE_COLORS[0];
 let activeDoodlePath = null;
 let doodlePointerId = null;
 let doodleChannel = null;
+let gameChannel = null;
 let activeWeatherKey = "";
 
 const defaultState = {
@@ -175,6 +210,7 @@ const defaultState = {
 
 let state = loadState();
 let currentGuess = "";
+localStorage.removeItem("funny-team-wordle-theme");
 normalizeState();
 ensureUniquePlayerEmojis();
 if (!state.activePlayerId) state.activePlayerId = state.players[0].id;
@@ -203,7 +239,7 @@ const els = {
   articleCloseButton: document.querySelector("#articleCloseButton"),
   hintBox: document.querySelector("#hintBox"),
   hintButton: document.querySelector("#hintButton"),
-  newWordButton: document.querySelector("#newWordButton"),
+  resetGameButton: document.querySelector("#resetGameButton"),
   dayLabel: document.querySelector("#dayLabel"),
   emojiButton: document.querySelector("#emojiButton"),
   emojiGrid: document.querySelector("#emojiGrid"),
@@ -218,8 +254,9 @@ const els = {
   weatherHigh: document.querySelector("#weatherHigh"),
   weatherLow: document.querySelector("#weatherLow"),
   weatherCondition: document.querySelector("#weatherCondition"),
-  weatherMoodIcon: document.querySelector("#weatherMoodIcon"),
-  weatherMoodLabel: document.querySelector("#weatherMoodLabel"),
+  triviaToggle: document.querySelector("#triviaToggle"),
+  triviaQuestion: document.querySelector("#triviaQuestion"),
+  triviaAnswer: document.querySelector("#triviaAnswer"),
   headlineTrack: document.querySelector("#headlineTrack"),
   headlinePreview: document.querySelector("#headlinePreview"),
   leaderboardList: document.querySelector("#leaderboardList"),
@@ -356,13 +393,31 @@ function dailyWordForDate(dateKey) {
   return WORDS[start];
 }
 
+function nextUnusedWord(dateKey) {
+  const used = new Set(state.usedWords.map(entryWord));
+  if (state.currentWord?.word) used.add(state.currentWord.word);
+  if (used.size >= WORDS.length) {
+    state.usedWords = [];
+    used.clear();
+  }
+
+  const currentIndex = WORDS.findIndex(({ word }) => word === state.currentWord?.word);
+  const start = currentIndex >= 0 ? currentIndex + 1 : dayNumber(dateKey);
+  for (let offset = 0; offset < WORDS.length; offset += 1) {
+    const candidate = WORDS[(start + offset) % WORDS.length];
+    if (!used.has(candidate.word)) return candidate;
+  }
+
+  return WORDS[((start % WORDS.length) + WORDS.length) % WORDS.length];
+}
+
 function recordUsedWord(word, dateKey) {
   if (state.usedWords.some((entry) => entryWord(entry) === word && entryDateKey(entry) === dateKey)) return;
   state.usedWords.push({ word, dateKey });
 }
 
-function pickNewWord(dateKey = todayKey()) {
-  const chosen = dailyWordForDate(dateKey);
+function pickNewWord(dateKey = todayKey(), options = {}) {
+  const chosen = options.forceNext ? nextUnusedWord(dateKey) : dailyWordForDate(dateKey);
   state.currentWord = { ...chosen, dateKey, startedAt: new Date().toISOString(), runs: {} };
   state.doodles = { dateKey, paths: [] };
   randomizePlayerEmojis();
@@ -370,6 +425,16 @@ function pickNewWord(dateKey = todayKey()) {
   recordUsedWord(chosen.word, dateKey);
   currentGuess = "";
   saveState();
+}
+
+function resetGameForGroup(options = {}) {
+  pickNewWord(todayKey(), { forceNext: true });
+  activeDoodlePath = null;
+  currentGuess = "";
+  if (!els.articlePanel.hidden) closeArticlePanel();
+  render();
+  drawDoodles();
+  if (options.broadcast !== false) broadcastGameReset();
 }
 
 function evaluateGuess(guess, target) {
@@ -407,10 +472,6 @@ function runForPlayer(playerId) {
   return state.currentWord.runs[playerId] || { guesses: [], hintUsed: false, status: "playing" };
 }
 
-function allPlayersFinished() {
-  return state.players.every((player) => runForPlayer(player.id).status !== "playing");
-}
-
 function currentLineIndex() {
   const playingRuns = state.players
     .map((player) => runForPlayer(player.id))
@@ -445,12 +506,12 @@ function render() {
   els.emojiButton.textContent = player.emoji;
   els.dayLabel.textContent = "The Board";
   updateWeatherBadge(player);
+  renderTrivia();
   ensureDoodleState(state.currentWord.dateKey);
   els.hintBox.hidden = !run.hintUsed;
   els.hintBox.textContent = run.hintUsed ? state.currentWord.hint : "";
   els.hintButton.disabled = run.hintUsed || !canGuess;
-  els.newWordButton.disabled = true;
-  els.newWordButton.textContent = allPlayersFinished() ? "Done today" : "Wait for everyone";
+  els.gamePlayArea.classList.toggle("is-waiting", run.status === "playing" && !canGuess);
   renderIdentityGate();
   renderEmojiGrid();
   renderBoard(run, canGuess);
@@ -485,30 +546,13 @@ function weatherUrl(location) {
   return `https://api.open-meteo.com/v1/forecast?${params}`;
 }
 
-function weatherMoodForCode(code) {
-  if ([0, 1].includes(code)) return { key: "sun", icon: "☀️", label: "Sunny" };
-  if (code === 2) return { key: "partly", icon: "🌤️", label: "Partly cloudy" };
-  if (code === 3) return { key: "cloud", icon: "☁️", label: "Cloudy" };
-  if ([45, 48].includes(code)) return { key: "fog", icon: "🌫️", label: "Foggy" };
-  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
-    return { key: "rain", icon: "🌧️", label: "Rainy" };
-  }
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return { key: "snow", icon: "❄️", label: "Snowy" };
-  if ([95, 96, 99].includes(code)) return { key: "storm", icon: "⛈️", label: "Stormy" };
-  return { key: "cloud", icon: "☁️", label: "Weather" };
-}
-
 function renderWeather(location, weather) {
-  const mood = weather?.mood || weatherMoodForCode(null);
   els.weatherPlace.textContent = location.label;
   els.weatherRangePlace.textContent = location.label;
   els.weatherTemp.textContent = weather?.temp == null ? "--°" : `${Math.round(weather.temp)}°`;
   els.weatherHigh.textContent = weather?.high == null ? "--°" : `${Math.round(weather.high)}°`;
   els.weatherLow.textContent = weather?.low == null ? "--°" : `${Math.round(weather.low)}°`;
   els.weatherCondition.textContent = weather?.condition || "Weather";
-  els.weatherMoodIcon.textContent = mood.icon;
-  els.weatherMoodLabel.textContent = mood.label;
-  els.weatherBadge.dataset.weather = mood.key;
 }
 
 async function loadWeather(location) {
@@ -524,7 +568,6 @@ async function loadWeather(location) {
     low: daily.temperature_2m_min?.[0],
     feels: current.apparent_temperature,
     condition: WEATHER_CODES[current.weather_code] || "Outside",
-    mood: weatherMoodForCode(current.weather_code),
     updatedAt: current.time || "",
   };
   WEATHER_CACHE.set(location.key, weather);
@@ -552,11 +595,27 @@ function updateWeatherBadge(player) {
         els.weatherHigh.textContent = "--°";
         els.weatherLow.textContent = "--°";
         els.weatherCondition.textContent = "Weather offline";
-        els.weatherMoodIcon.textContent = "☁️";
-        els.weatherMoodLabel.textContent = "Offline";
-        els.weatherBadge.dataset.weather = "cloud";
       }
     });
+}
+
+function dailyTriviaForDate(dateKey = todayKey()) {
+  const index = ((dayNumber(dateKey) % DAILY_TRIVIA.length) + DAILY_TRIVIA.length) % DAILY_TRIVIA.length;
+  return DAILY_TRIVIA[index];
+}
+
+function triviaRevealedForDate(dateKey = todayKey()) {
+  return localStorage.getItem(TRIVIA_REVEAL_KEY) === dateKey;
+}
+
+function renderTrivia() {
+  const dateKey = todayKey();
+  const trivia = dailyTriviaForDate(dateKey);
+  const revealed = triviaRevealedForDate(dateKey);
+  els.triviaQuestion.textContent = revealed ? trivia.answer : trivia.question;
+  els.triviaAnswer.textContent = revealed ? "Answer" : "";
+  els.triviaAnswer.hidden = !revealed;
+  els.triviaToggle.setAttribute("aria-label", revealed ? "Show trivia question" : "Reveal trivia answer");
 }
 
 function playerResultLabel(run) {
@@ -730,6 +789,33 @@ function applySyncedDoodles(payload) {
   state.doodles = { dateKey: payload.dateKey, paths: payload.paths };
   activeDoodlePath = null;
   saveState();
+  drawDoodles();
+}
+
+function broadcastGameReset() {
+  const payload = {
+    sentAt: Date.now(),
+    currentWord: state.currentWord,
+    usedWords: state.usedWords,
+    players: state.players,
+    doodles: state.doodles,
+  };
+  try {
+    gameChannel?.postMessage(payload);
+  } catch {}
+  localStorage.setItem(GAME_SYNC_KEY, JSON.stringify(payload));
+}
+
+function applySyncedGameReset(payload) {
+  if (!payload?.currentWord?.word || payload.currentWord.startedAt === state.currentWord?.startedAt) return;
+  state.currentWord = payload.currentWord;
+  state.usedWords = Array.isArray(payload.usedWords) ? payload.usedWords : state.usedWords;
+  if (Array.isArray(payload.players)) state.players = payload.players;
+  state.doodles = payload.doodles && Array.isArray(payload.doodles.paths) ? payload.doodles : { dateKey: state.currentWord.dateKey, paths: [] };
+  activeDoodlePath = null;
+  currentGuess = "";
+  saveState();
+  render();
   drawDoodles();
 }
 
@@ -1259,10 +1345,18 @@ els.hintButton.addEventListener("click", () => {
   render();
 });
 
-els.newWordButton.addEventListener("click", () => {
-  if (state.currentWord?.dateKey === todayKey()) return;
-  pickNewWord();
-  render();
+els.resetGameButton.addEventListener("click", () => {
+  const confirmed = window.confirm("Start a new game for everyone? This clears all current guesses and doodles.");
+  if (!confirmed) return;
+  sounds.switch();
+  resetGameForGroup();
+});
+
+els.triviaToggle.addEventListener("click", () => {
+  if (triviaRevealedForDate()) localStorage.removeItem(TRIVIA_REVEAL_KEY);
+  else localStorage.setItem(TRIVIA_REVEAL_KEY, todayKey());
+  sounds.tap();
+  renderTrivia();
 });
 
 els.emojiButton.addEventListener("click", () => {
@@ -1316,15 +1410,17 @@ document.addEventListener("keydown", (event) => {
 
 window.addEventListener("resize", resizeDoodleCanvas);
 window.addEventListener("storage", (event) => {
-  if (event.key !== DOODLE_SYNC_KEY || !event.newValue) return;
   try {
-    applySyncedDoodles(JSON.parse(event.newValue));
+    if (event.key === DOODLE_SYNC_KEY && event.newValue) applySyncedDoodles(JSON.parse(event.newValue));
+    if (event.key === GAME_SYNC_KEY && event.newValue) applySyncedGameReset(JSON.parse(event.newValue));
   } catch {}
 });
 
 if ("BroadcastChannel" in window) {
   doodleChannel = new BroadcastChannel("funny-team-wordle-doodles");
   doodleChannel.addEventListener("message", (event) => applySyncedDoodles(event.data));
+  gameChannel = new BroadcastChannel("funny-team-wordle-game");
+  gameChannel.addEventListener("message", (event) => applySyncedGameReset(event.data));
 }
 
 new ResizeObserver(resizeDoodleCanvas).observe(els.gamePlayArea);

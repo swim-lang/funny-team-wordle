@@ -51,7 +51,7 @@
               </div>
             </div>
             <button id="hintButton" type="button">Hint costs 1 turn</button>
-            <button id="newWordButton" type="button">New word</button>
+            <button id="resetGameButton" type="button">New game</button>
           </div>
         </header>
 
@@ -86,10 +86,10 @@
             <strong><span id="weatherHigh">--°</span>/<span id="weatherLow">--°</span></strong>
             <small>High / low</small>
           </div>
-          <div class="weather-face weather-mood" aria-hidden="true">
-            <strong id="weatherMoodIcon">☁️</strong>
-            <small id="weatherMoodLabel">Weather</small>
-          </div>
+          <button id="triviaToggle" class="weather-face trivia-face" type="button" aria-label="Reveal trivia answer">
+            <strong id="triviaQuestion">Loading...</strong>
+            <small id="triviaAnswer" hidden></small>
+          </button>
         </div>
         <div class="ticker-window">
           <div id="headlineTrack" class="ticker-track">

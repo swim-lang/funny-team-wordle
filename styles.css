@@ -1,13 +1,20 @@
 :root {
   --ink: #111111;
+  --grid: #111111;
   --paper: #fff8e8;
   --panel: #ffffff;
+  --panel-soft: #fff3bd;
   --cyan: #68d8ff;
   --lime: #72e06a;
   --amber: #ffd24a;
   --pink: #ff7ab8;
   --red: #ff5c5c;
   --gray: #6d6d6d;
+  --inset: #d7d7d7;
+  --tile-fill: #dff5ff;
+  --hint-bg: #ffe58a;
+  --hint-text: #6b4500;
+  --gate-bg: rgba(255, 248, 232, 0.96);
 }
 
 * {
@@ -20,8 +27,8 @@ body {
   color: var(--ink);
   font-family: "Arial Black", "Arial Narrow", system-ui, sans-serif;
   background:
-    linear-gradient(var(--ink) 2px, transparent 2px),
-    linear-gradient(90deg, var(--ink) 2px, transparent 2px),
+    linear-gradient(var(--grid) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid) 2px, transparent 2px),
     var(--paper);
   background-size: 32px 32px;
 }
@@ -84,9 +91,9 @@ button:disabled {
   justify-content: center;
   padding: 24px;
   background:
-    linear-gradient(var(--ink) 2px, transparent 2px),
-    linear-gradient(90deg, var(--ink) 2px, transparent 2px),
-    rgba(255, 248, 232, 0.96);
+    linear-gradient(var(--grid) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid) 2px, transparent 2px),
+    var(--gate-bg);
   background-size: 32px 32px;
 }
 
@@ -117,7 +124,7 @@ button:disabled {
 
 .identity-buttons button {
   min-height: 64px;
-  background: #fff3bd;
+  background: var(--panel-soft);
   font-size: 18px;
   text-transform: uppercase;
 }
@@ -161,6 +168,13 @@ button:disabled {
   justify-content: space-between;
   gap: 22px;
   min-height: 0;
+  transition: filter 180ms ease, opacity 180ms ease;
+}
+
+.game-play-area.is-waiting {
+  opacity: 0.42;
+  filter: grayscale(1);
+  pointer-events: none;
 }
 
 .game-play-area[hidden],
@@ -171,6 +185,9 @@ button:disabled {
 
 .brand-block {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .pixel-badge {
@@ -189,7 +206,7 @@ button:disabled {
 .leaderboard,
 .hint-box {
   border: 3px solid var(--ink);
-  background: #fff3bd;
+  background: var(--panel-soft);
   padding: 14px;
   box-shadow: 4px 4px 0 var(--ink);
 }
@@ -223,7 +240,7 @@ button:disabled {
   background: var(--panel);
   padding: 0 12px;
   font-size: 24px;
-  box-shadow: inset 3px 3px 0 #d7d7d7;
+  box-shadow: inset 3px 3px 0 var(--inset);
 }
 
 input {
@@ -233,7 +250,7 @@ input {
   border-radius: 0;
   padding: 0 12px;
   background: var(--panel);
-  box-shadow: inset 3px 3px 0 #d7d7d7;
+  box-shadow: inset 3px 3px 0 var(--inset);
 }
 
 .emoji-grid {
@@ -314,7 +331,7 @@ input {
 }
 
 .leaderboard-row.is-active {
-  background: #fff3bd;
+  background: var(--panel-soft);
 }
 
 .leaderboard-row strong {
@@ -352,7 +369,7 @@ input {
   gap: 10px;
   align-items: center;
   border: 3px solid var(--ink);
-  background: #fff3bd;
+  background: var(--panel-soft);
   padding: 10px;
   box-shadow: 5px 5px 0 var(--ink);
 }
@@ -391,7 +408,7 @@ input {
 .hint-box {
   position: relative;
   z-index: 1;
-  background: #fff1a0;
+  background: var(--hint-bg);
   text-align: center;
   text-transform: uppercase;
 }
@@ -425,7 +442,7 @@ input {
 }
 
 .tile.filled {
-  background: #dff5ff;
+  background: var(--tile-fill);
 }
 
 .tile.correct {
@@ -442,9 +459,9 @@ input {
 }
 
 .tile.hint-spent {
-  color: #6b4500;
+  color: var(--hint-text);
   border-style: dashed;
-  background: #ffe58a;
+  background: var(--hint-bg);
 }
 
 .keyboard {
@@ -588,7 +605,7 @@ input {
 
 .ticker-weather {
   position: relative;
-  min-width: 154px;
+  min-width: clamp(172px, 18vw, 230px);
   min-height: 68px;
   gap: 2px;
   line-height: 1;
@@ -604,15 +621,28 @@ input {
   justify-content: center;
   gap: 2px;
   opacity: 0;
-  animation: weather-now-cycle 21s ease-in-out infinite;
+  animation: weather-now-cycle 24s ease-in-out infinite;
 }
 
 .weather-range {
   animation-name: weather-range-cycle;
 }
 
-.weather-mood {
-  animation-name: weather-mood-cycle;
+.trivia-face {
+  inset: 7px 8px;
+  gap: 3px;
+  border: 0 !important;
+  background: transparent;
+  box-shadow: none !important;
+  color: var(--ink);
+  cursor: pointer;
+  animation-name: trivia-cycle;
+}
+
+.trivia-face:hover,
+.trivia-face:active {
+  transform: none;
+  box-shadow: none;
 }
 
 .weather-face span,
@@ -629,30 +659,15 @@ input {
   font-size: 22px;
 }
 
-.weather-mood strong {
-  font-size: 40px;
-  line-height: 0.9;
-  transform-origin: center;
-  animation: weather-mood-bob 1.8s ease-in-out infinite;
-}
-
 .weather-range strong span {
   font-size: inherit;
 }
 
-.ticker-weather[data-weather="rain"] .weather-mood strong,
-.ticker-weather[data-weather="storm"] .weather-mood strong {
-  animation-name: weather-mood-shake;
-}
-
-.ticker-weather[data-weather="snow"] .weather-mood strong,
-.ticker-weather[data-weather="fog"] .weather-mood strong {
-  animation-name: weather-mood-float;
-}
-
-.ticker-weather[data-weather="sun"] .weather-mood strong,
-.ticker-weather[data-weather="partly"] .weather-mood strong {
-  animation-name: weather-mood-glow;
+.trivia-face strong {
+  max-width: 210px;
+  font-size: 13px;
+  line-height: 1.08;
+  white-space: normal;
 }
 
 .weather-face small {
@@ -662,11 +677,11 @@ input {
 
 @keyframes weather-now-cycle {
   0%,
-  28% {
+  29% {
     opacity: 1;
   }
 
-  33%,
+  34%,
   95% {
     opacity: 0;
   }
@@ -678,86 +693,34 @@ input {
 
 @keyframes weather-range-cycle {
   0%,
-  28% {
+  29% {
     opacity: 0;
   }
 
-  33%,
-  61% {
+  34%,
+  54% {
     opacity: 1;
   }
 
-  66%,
+  59%,
   100% {
     opacity: 0;
   }
 }
 
-@keyframes weather-mood-cycle {
+@keyframes trivia-cycle {
   0%,
-  61% {
+  54% {
     opacity: 0;
   }
 
-  66%,
+  59%,
   95% {
     opacity: 1;
   }
 
   100% {
     opacity: 0;
-  }
-}
-
-@keyframes weather-mood-bob {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-
-  50% {
-    transform: translateY(-4px) scale(1.08);
-  }
-}
-
-@keyframes weather-mood-shake {
-  0%,
-  100% {
-    transform: translateX(0) rotate(0deg) scale(1);
-  }
-
-  35% {
-    transform: translateX(-2px) rotate(-5deg) scale(1.04);
-  }
-
-  70% {
-    transform: translateX(2px) rotate(5deg) scale(1.08);
-  }
-}
-
-@keyframes weather-mood-float {
-  0%,
-  100% {
-    transform: translateY(2px) scale(1);
-    opacity: 0.85;
-  }
-
-  50% {
-    transform: translateY(-5px) scale(1.05);
-    opacity: 1;
-  }
-}
-
-@keyframes weather-mood-glow {
-  0%,
-  100% {
-    transform: scale(1);
-    filter: saturate(1);
-  }
-
-  50% {
-    transform: scale(1.14);
-    filter: saturate(1.35);
   }
 }
 
@@ -817,7 +780,7 @@ input {
   gap: 12px;
   width: min(520px, calc(100vw - 48px));
   border: 4px solid var(--ink);
-  background: #fff3bd;
+  background: var(--panel-soft);
   padding: 12px;
   box-shadow: 7px 7px 0 var(--ink);
 }
