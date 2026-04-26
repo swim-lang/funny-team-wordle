@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchovies Wordle</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="identityGate" class="identity-gate" hidden>
+      <div class="identity-card">
+        <span class="pixel-badge">Anchovies Wordle</span>
+        <h1>Who are you?</h1>
+        <div id="identityButtons" class="identity-buttons"></div>
+      </div>
+    </div>
+
+    <main class="app-shell">
+      <section class="score-panel">
+        <div class="brand-block">
+          <span class="pixel-badge">Anchovies Wordle</span>
+        </div>
+
+        <div class="player-card">
+          <label>Playing as</label>
+          <div class="player-row">
+            <button id="emojiButton" class="emoji-button" type="button" aria-label="Choose emoji">😀</button>
+            <strong id="currentPlayerName" class="player-name-pill">Player</strong>
+          </div>
+          <div id="emojiGrid" class="emoji-grid" hidden></div>
+          <button id="switchPlayerButton" class="switch-player-button" type="button">Switch player</button>
+        </div>
+
+        <div class="stats-grid">
+          <div>
+            <span id="winsStat">0</span>
+            <small>Wins</small>
+          </div>
+          <div>
+            <span id="streakStat">0</span>
+            <small>Streak</small>
+          </div>
+          <div>
+            <span id="playedStat">0</span>
+            <small>Played</small>
+          </div>
+        </div>
+
+        <div class="leaderboard">
+          <div class="panel-heading">
+            <h2>Party Board</h2>
+          </div>
+          <div id="leaderboardList" class="leaderboard-list"></div>
+        </div>
+      </section>
+
+      <section class="game-panel">
+        <header class="game-header">
+          <span id="dayLabel" class="pixel-badge">The Board</span>
+          <div class="header-actions">
+            <button id="hintButton" type="button">Hint costs 1 turn</button>
+            <button id="newWordButton" type="button">New word</button>
+          </div>
+        </header>
+
+        <div id="hintBox" class="hint-box" hidden></div>
+        <div id="board" class="board" aria-label="Wordle board"></div>
+        <div id="keyboard" class="keyboard" aria-label="Keyboard"></div>
+      </section>
+
+      <section class="news-ticker" aria-label="Headlines">
+        <span class="ticker-label">Headlines</span>
+        <div class="ticker-window">
+          <div id="headlineTrack" class="ticker-track">
+            <span>Loading headlines...</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./valid-words.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
