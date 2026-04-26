@@ -228,7 +228,7 @@ button:disabled {
   min-width: 56px;
   height: 56px;
   font-size: 28px;
-  background: var(--pink);
+  background: var(--panel);
 }
 
 .player-name-pill {

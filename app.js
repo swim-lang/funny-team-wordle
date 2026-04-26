@@ -1,6 +1,6 @@
 const WORD_LENGTH = 5;
 const MAX_ATTEMPTS = 6;
-const STORAGE_KEY = "funny-team-wordle-v2";
+const STORAGE_KEY = "funny-team-wordle-v3";
 const TRIVIA_REVEAL_KEY = "funny-team-wordle-trivia-reveal-date";
 const DAILY_EPOCH = "2026-04-26";
 const TEAM_MEMBERS = ["Kira", "Sean", "Logan", "Alexis"];
@@ -673,8 +673,12 @@ const sounds = {
   tap() {
     tone(540, 0, 0.045, "square", 0.025);
   },
+  type() {
+    noise(0, 0.012, 0.005);
+    tone(900, 0, 0.018, "triangle", 0.007);
+  },
   backspace() {
-    tone(260, 0, 0.05, "triangle", 0.03);
+    tone(360, 0, 0.026, "triangle", 0.01);
   },
   invalid() {
     tone(140, 0, 0.09, "sawtooth", 0.035);
@@ -1288,7 +1292,7 @@ function handleKey(key) {
 
   if (/^[A-Z]$/.test(key) && currentGuess.length < WORD_LENGTH) {
     currentGuess += key;
-    sounds.tap();
+    sounds.type();
     render();
   } else if (/^[A-Z]$/.test(key)) {
     sounds.invalid();
