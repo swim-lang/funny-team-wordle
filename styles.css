@@ -256,7 +256,7 @@ input {
   background: var(--cyan);
 }
 
-.switch-player-button {
+.home-button {
   width: 100%;
   margin-top: 12px;
   padding: 10px 12px;
@@ -311,6 +311,10 @@ input {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.leaderboard-row.is-active {
+  background: #fff3bd;
 }
 
 .leaderboard-row strong {
@@ -571,13 +575,190 @@ input {
 .ticker-label {
   align-self: stretch;
   display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   border-right: 4px solid var(--ink);
   background: var(--pink);
-  padding: 0 14px;
+  padding: 8px 14px;
   font-size: 12px;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.ticker-weather {
+  position: relative;
+  min-width: 154px;
+  min-height: 68px;
+  gap: 2px;
+  line-height: 1;
+  text-align: center;
+}
+
+.weather-face {
+  position: absolute;
+  inset: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  animation: weather-now-cycle 21s ease-in-out infinite;
+}
+
+.weather-range {
+  animation-name: weather-range-cycle;
+}
+
+.weather-mood {
+  animation-name: weather-mood-cycle;
+}
+
+.weather-face span,
+.weather-face small {
+  font-size: 10px;
+}
+
+.weather-face strong {
+  font-size: 26px;
+  line-height: 0.95;
+}
+
+.weather-range strong {
+  font-size: 22px;
+}
+
+.weather-mood strong {
+  font-size: 40px;
+  line-height: 0.9;
+  transform-origin: center;
+  animation: weather-mood-bob 1.8s ease-in-out infinite;
+}
+
+.weather-range strong span {
+  font-size: inherit;
+}
+
+.ticker-weather[data-weather="rain"] .weather-mood strong,
+.ticker-weather[data-weather="storm"] .weather-mood strong {
+  animation-name: weather-mood-shake;
+}
+
+.ticker-weather[data-weather="snow"] .weather-mood strong,
+.ticker-weather[data-weather="fog"] .weather-mood strong {
+  animation-name: weather-mood-float;
+}
+
+.ticker-weather[data-weather="sun"] .weather-mood strong,
+.ticker-weather[data-weather="partly"] .weather-mood strong {
+  animation-name: weather-mood-glow;
+}
+
+.weather-face small {
+  font-family: Arial, system-ui, sans-serif;
+  font-weight: 900;
+}
+
+@keyframes weather-now-cycle {
+  0%,
+  28% {
+    opacity: 1;
+  }
+
+  33%,
+  95% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes weather-range-cycle {
+  0%,
+  28% {
+    opacity: 0;
+  }
+
+  33%,
+  61% {
+    opacity: 1;
+  }
+
+  66%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes weather-mood-cycle {
+  0%,
+  61% {
+    opacity: 0;
+  }
+
+  66%,
+  95% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes weather-mood-bob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-4px) scale(1.08);
+  }
+}
+
+@keyframes weather-mood-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+
+  35% {
+    transform: translateX(-2px) rotate(-5deg) scale(1.04);
+  }
+
+  70% {
+    transform: translateX(2px) rotate(5deg) scale(1.08);
+  }
+}
+
+@keyframes weather-mood-float {
+  0%,
+  100% {
+    transform: translateY(2px) scale(1);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: translateY(-5px) scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes weather-mood-glow {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: saturate(1);
+  }
+
+  50% {
+    transform: scale(1.14);
+    filter: saturate(1.35);
+  }
 }
 
 .ticker-window {
@@ -728,6 +909,10 @@ input {
     border-right: 0;
     border-bottom: 4px solid var(--ink);
     padding: 8px 12px;
+  }
+
+  .ticker-weather {
+    width: 100%;
   }
 
   .headline-preview {

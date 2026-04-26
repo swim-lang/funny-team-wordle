@@ -28,7 +28,7 @@
             <strong id="currentPlayerName" class="player-name-pill">Player</strong>
           </div>
           <div id="emojiGrid" class="emoji-grid" hidden></div>
-          <button id="switchPlayerButton" class="switch-player-button" type="button">Switch player</button>
+          <button id="homeButton" class="home-button" type="button">Home</button>
         </div>
 
         <div class="leaderboard">
@@ -74,8 +74,23 @@
         </article>
       </section>
 
-      <section class="news-ticker" aria-label="Headlines">
-        <span class="ticker-label">Headlines</span>
+      <section class="news-ticker" aria-label="Headlines and weather">
+        <div id="weatherBadge" class="ticker-label ticker-weather" aria-live="polite">
+          <div class="weather-face weather-now">
+            <span id="weatherPlace">Denver</span>
+            <strong id="weatherTemp">--°</strong>
+            <small id="weatherCondition">Weather</small>
+          </div>
+          <div class="weather-face weather-range">
+            <span id="weatherRangePlace">Denver</span>
+            <strong><span id="weatherHigh">--°</span>/<span id="weatherLow">--°</span></strong>
+            <small>High / low</small>
+          </div>
+          <div class="weather-face weather-mood" aria-hidden="true">
+            <strong id="weatherMoodIcon">☁️</strong>
+            <small id="weatherMoodLabel">Weather</small>
+          </div>
+        </div>
         <div class="ticker-window">
           <div id="headlineTrack" class="ticker-track">
             <span>Loading headlines...</span>

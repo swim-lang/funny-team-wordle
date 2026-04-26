@@ -3,6 +3,46 @@ const MAX_ATTEMPTS = 6;
 const STORAGE_KEY = "funny-team-wordle-v2";
 const DAILY_EPOCH = "2026-04-26";
 const TEAM_MEMBERS = ["Kira", "Sean", "Logan", "Alexis"];
+const WEATHER_LOCATIONS = {
+  denver: { label: "Denver", latitude: 39.7392, longitude: -104.9903 },
+  myrtle: { label: "Myrtle Beach", latitude: 33.6891, longitude: -78.8867 },
+};
+const WEATHER_BY_PLAYER = {
+  kira: "denver",
+  sean: "denver",
+  logan: "denver",
+  alexis: "myrtle",
+};
+const WEATHER_CODES = {
+  0: "Clear",
+  1: "Mostly clear",
+  2: "Partly cloudy",
+  3: "Cloudy",
+  45: "Fog",
+  48: "Freezing fog",
+  51: "Light drizzle",
+  53: "Drizzle",
+  55: "Heavy drizzle",
+  56: "Icy drizzle",
+  57: "Icy drizzle",
+  61: "Light rain",
+  63: "Rain",
+  65: "Heavy rain",
+  66: "Freezing rain",
+  67: "Freezing rain",
+  71: "Light snow",
+  73: "Snow",
+  75: "Heavy snow",
+  77: "Snow grains",
+  80: "Rain showers",
+  81: "Rain showers",
+  82: "Heavy showers",
+  85: "Snow showers",
+  86: "Snow showers",
+  95: "Thunderstorms",
+  96: "Storms + hail",
+  99: "Storms + hail",
+};
 const HEADLINE_SOURCES = [
   { name: "TMZ", feedUrl: "https://www.tmz.com/rss.xml", homeUrl: "https://www.tmz.com/", limit: 10 },
   { name: "Google News", feedUrl: "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", limit: 16 },
@@ -114,6 +154,7 @@ const KEYS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
 const DOODLE_COLORS = ["#111111", "#ff5c5c", "#68d8ff", "#72e06a", "#ffd24a", "#ff7ab8"];
 const DOODLE_SYNC_KEY = "funny-team-wordle-doodles-sync";
 const ARTICLE_IMAGE_CACHE = new Map();
+const WEATHER_CACHE = new Map();
 let activePreviewItem = null;
 let activeArticleItem = null;
 let doodleEnabled = false;
@@ -121,6 +162,7 @@ let doodleColor = DOODLE_COLORS[0];
 let activeDoodlePath = null;
 let doodlePointerId = null;
 let doodleChannel = null;
+let activeWeatherKey = "";
 
 const defaultState = {
   usedWords: [],
@@ -168,7 +210,16 @@ const els = {
   currentPlayerName: document.querySelector("#currentPlayerName"),
   identityGate: document.querySelector("#identityGate"),
   identityButtons: document.querySelector("#identityButtons"),
-  switchPlayerButton: document.querySelector("#switchPlayerButton"),
+  homeButton: document.querySelector("#homeButton"),
+  weatherBadge: document.querySelector("#weatherBadge"),
+  weatherPlace: document.querySelector("#weatherPlace"),
+  weatherRangePlace: document.querySelector("#weatherRangePlace"),
+  weatherTemp: document.querySelector("#weatherTemp"),
+  weatherHigh: document.querySelector("#weatherHigh"),
+  weatherLow: document.querySelector("#weatherLow"),
+  weatherCondition: document.querySelector("#weatherCondition"),
+  weatherMoodIcon: document.querySelector("#weatherMoodIcon"),
+  weatherMoodLabel: document.querySelector("#weatherMoodLabel"),
   headlineTrack: document.querySelector("#headlineTrack"),
   headlinePreview: document.querySelector("#headlinePreview"),
   leaderboardList: document.querySelector("#leaderboardList"),
@@ -256,7 +307,8 @@ function ensureDoodleState(dateKey = todayKey()) {
 }
 
 function activePlayer() {
-  return state.players.find((player) => player.id === state.activePlayerId) || state.players[0];
+  const playerId = state.selectedMemberId || state.activePlayerId;
+  return state.players.find((player) => player.id === playerId) || state.players[0];
 }
 
 function activeRun() {
@@ -384,26 +436,15 @@ function lettersFound(run) {
   return Math.min(found.size, WORD_LENGTH);
 }
 
-function switchToNextUnfinishedPlayer() {
-  const line = currentLineIndex();
-  const next = state.players.find((player) => {
-    const run = runForPlayer(player.id);
-    return run.status === "playing" && run.guesses.length === line;
-  }) || state.players.find((player) => runForPlayer(player.id).status === "playing");
-
-  if (next) {
-    state.activePlayerId = next.id;
-    currentGuess = "";
-  }
-}
-
 function render() {
   const player = activePlayer();
+  state.activePlayerId = player.id;
   const run = activeRun();
   const canGuess = canGuessThisLine(run);
   els.currentPlayerName.textContent = player.name;
   els.emojiButton.textContent = player.emoji;
   els.dayLabel.textContent = "The Board";
+  updateWeatherBadge(player);
   ensureDoodleState(state.currentWord.dateKey);
   els.hintBox.hidden = !run.hintUsed;
   els.hintBox.textContent = run.hintUsed ? state.currentWord.hint : "";
@@ -424,6 +465,98 @@ function turnLabel() {
   const line = currentLineIndex();
   if (line >= MAX_ATTEMPTS) return "DONE";
   return `TURN ${line + 1}`;
+}
+
+function weatherLocationForPlayer(player) {
+  const key = WEATHER_BY_PLAYER[player.id] || "denver";
+  return { key, ...WEATHER_LOCATIONS[key] };
+}
+
+function weatherUrl(location) {
+  const params = new URLSearchParams({
+    latitude: location.latitude,
+    longitude: location.longitude,
+    current: "temperature_2m,apparent_temperature,weather_code",
+    daily: "temperature_2m_max,temperature_2m_min",
+    forecast_days: "1",
+    temperature_unit: "fahrenheit",
+    timezone: "auto",
+  });
+  return `https://api.open-meteo.com/v1/forecast?${params}`;
+}
+
+function weatherMoodForCode(code) {
+  if ([0, 1].includes(code)) return { key: "sun", icon: "☀️", label: "Sunny" };
+  if (code === 2) return { key: "partly", icon: "🌤️", label: "Partly cloudy" };
+  if (code === 3) return { key: "cloud", icon: "☁️", label: "Cloudy" };
+  if ([45, 48].includes(code)) return { key: "fog", icon: "🌫️", label: "Foggy" };
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) {
+    return { key: "rain", icon: "🌧️", label: "Rainy" };
+  }
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return { key: "snow", icon: "❄️", label: "Snowy" };
+  if ([95, 96, 99].includes(code)) return { key: "storm", icon: "⛈️", label: "Stormy" };
+  return { key: "cloud", icon: "☁️", label: "Weather" };
+}
+
+function renderWeather(location, weather) {
+  const mood = weather?.mood || weatherMoodForCode(null);
+  els.weatherPlace.textContent = location.label;
+  els.weatherRangePlace.textContent = location.label;
+  els.weatherTemp.textContent = weather?.temp == null ? "--°" : `${Math.round(weather.temp)}°`;
+  els.weatherHigh.textContent = weather?.high == null ? "--°" : `${Math.round(weather.high)}°`;
+  els.weatherLow.textContent = weather?.low == null ? "--°" : `${Math.round(weather.low)}°`;
+  els.weatherCondition.textContent = weather?.condition || "Weather";
+  els.weatherMoodIcon.textContent = mood.icon;
+  els.weatherMoodLabel.textContent = mood.label;
+  els.weatherBadge.dataset.weather = mood.key;
+}
+
+async function loadWeather(location) {
+  if (WEATHER_CACHE.has(location.key)) return WEATHER_CACHE.get(location.key);
+  const response = await fetch(weatherUrl(location), { cache: "no-store" });
+  if (!response.ok) throw new Error(`Weather failed: ${response.status}`);
+  const data = await response.json();
+  const current = data.current || {};
+  const daily = data.daily || {};
+  const weather = {
+    temp: current.temperature_2m,
+    high: daily.temperature_2m_max?.[0],
+    low: daily.temperature_2m_min?.[0],
+    feels: current.apparent_temperature,
+    condition: WEATHER_CODES[current.weather_code] || "Outside",
+    mood: weatherMoodForCode(current.weather_code),
+    updatedAt: current.time || "",
+  };
+  WEATHER_CACHE.set(location.key, weather);
+  return weather;
+}
+
+function updateWeatherBadge(player) {
+  const location = weatherLocationForPlayer(player);
+  if (activeWeatherKey === location.key && WEATHER_CACHE.has(location.key)) {
+    renderWeather(location, WEATHER_CACHE.get(location.key));
+    return;
+  }
+
+  activeWeatherKey = location.key;
+  renderWeather(location, WEATHER_CACHE.get(location.key));
+  loadWeather(location)
+    .then((weather) => {
+      if (activeWeatherKey === location.key) renderWeather(location, weather);
+    })
+    .catch(() => {
+      if (activeWeatherKey === location.key) {
+        els.weatherPlace.textContent = location.label;
+        els.weatherRangePlace.textContent = location.label;
+        els.weatherTemp.textContent = "--°";
+        els.weatherHigh.textContent = "--°";
+        els.weatherLow.textContent = "--°";
+        els.weatherCondition.textContent = "Weather offline";
+        els.weatherMoodIcon.textContent = "☁️";
+        els.weatherMoodLabel.textContent = "Offline";
+        els.weatherBadge.dataset.weather = "cloud";
+      }
+    });
 }
 
 function playerResultLabel(run) {
@@ -744,16 +877,9 @@ function renderLeaderboard() {
   });
 
   rows.forEach(({ player, run }) => {
-    const row = document.createElement("button");
-    row.type = "button";
-    row.className = "leaderboard-row";
+    const row = document.createElement("div");
+    row.className = `leaderboard-row ${player.id === activePlayer().id ? "is-active" : ""}`;
     row.innerHTML = `<strong>${player.emoji} ${player.name}</strong><small>${playerResultLabel(run)} · ${lettersFound(run)}/${WORD_LENGTH} letters</small>`;
-    row.addEventListener("click", () => {
-      sounds.switch();
-      state.activePlayerId = player.id;
-      currentGuess = "";
-      render();
-    });
     els.leaderboardList.append(row);
   });
 }
@@ -1114,7 +1240,6 @@ function submitGuess() {
     completeRun(run, false);
   } else {
     sounds.submit();
-    switchToNextUnfinishedPlayer();
   }
   currentGuess = "";
   render();
@@ -1123,7 +1248,6 @@ function submitGuess() {
 function completeRun(run, won) {
   if (run.status !== "playing") return;
   run.status = won ? "won" : "lost";
-  switchToNextUnfinishedPlayer();
 }
 
 els.hintButton.addEventListener("click", () => {
@@ -1146,9 +1270,10 @@ els.emojiButton.addEventListener("click", () => {
   els.emojiGrid.hidden = !els.emojiGrid.hidden;
 });
 
-els.switchPlayerButton.addEventListener("click", () => {
+els.homeButton.addEventListener("click", () => {
   sounds.switch();
   state.selectedMemberId = null;
+  saveState();
   renderIdentityGate(true);
 });
 
