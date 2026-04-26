@@ -3,13 +3,21 @@ const MAX_ATTEMPTS = 6;
 const STORAGE_KEY = "funny-team-wordle-v2";
 const DAILY_EPOCH = "2026-04-26";
 const TEAM_MEMBERS = ["Kira", "Sean", "Logan", "Alexis"];
-const TMZ_FEED_URL = "https://www.tmz.com/rss.xml";
-const TMZ_JSON_URL = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(TMZ_FEED_URL)}`;
-const TMZ_PROXY_URL = `https://api.allorigins.win/raw?url=${encodeURIComponent(TMZ_FEED_URL)}`;
+const HEADLINE_SOURCES = [
+  { name: "TMZ", feedUrl: "https://www.tmz.com/rss.xml", homeUrl: "https://www.tmz.com/", limit: 10 },
+  { name: "Google News", feedUrl: "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", limit: 16 },
+  { name: "Denver Local", feedUrl: "https://news.google.com/rss/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", limit: 12 },
+  { name: "OpenAI", feedUrl: "https://openai.com/news/rss.xml", homeUrl: "https://openai.com/news/", limit: 8 },
+  { name: "AI Labs", feedUrl: "https://news.google.com/rss/search?q=OpenAI%20OR%20Anthropic%20OR%20Claude%20OR%20GPT%20OR%20ElevenLabs%20OR%20Runway%20AI%20OR%20Lovable%20AI&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=OpenAI%20Anthropic%20Claude%20GPT%20ElevenLabs%20Runway%20Lovable&hl=en-US&gl=US&ceid=US:en", limit: 16 },
+  { name: "Google + Apple", feedUrl: "https://news.google.com/rss/search?q=Google%20AI%20OR%20Apple%20AI&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=Google%20AI%20Apple%20AI&hl=en-US&gl=US&ceid=US:en", limit: 10 },
+  { name: "AI News", feedUrl: "https://news.google.com/rss/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", limit: 12 },
+  { name: "Design", feedUrl: "https://news.google.com/rss/search?q=%22The%20Brand%20Identity%22%20OR%20Pentagram%20design%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=%22The%20Brand%20Identity%22%20Pentagram%20design%20news&hl=en-US&gl=US&ceid=US:en", limit: 8 },
+  { name: "Movie News", feedUrl: "https://news.google.com/rss/search?q=movie%20news%20OR%20film%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=movie%20news%20film%20news&hl=en-US&gl=US&ceid=US:en", limit: 12 },
+];
 const FALLBACK_HEADLINES = [
-  { title: "TMZ headlines are warming up", link: "https://www.tmz.com/" },
-  { title: "Celebrity chaos pending refresh", link: "https://www.tmz.com/" },
-  { title: "Big headline energy loading", link: "https://www.tmz.com/" },
+  { source: "TMZ", title: "Celebrity chaos pending refresh", link: "https://www.tmz.com/", summary: "TMZ headlines are taking a dramatic little lap before loading.", body: "TMZ headlines are taking a dramatic little lap before loading." },
+  { source: "Google News", title: "Top stories are warming up", link: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", summary: "Google News is loading the main headlines.", body: "Google News is loading the main headlines." },
+  { source: "Denver Local", title: "Denver local headlines loading", link: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", summary: "Denver-area headlines are getting in line.", body: "Denver-area headlines are getting in line." },
 ];
 
 const ANSWER_POOL = `CHAOS FERAL PETTY SALTY TOXIC TIPSY VODKA TWERK DRAMA PANIC SWEAT CURSE HEXED COVEN OUIJA CRYPT RABID MANIC MOODY SPITE SAUCY SNARK WRECK CRASH VEXED JUICY MESSY GRIFT YIKES WOOZY SHADY CRAVE WORST ROAST GUILT SHAME DOOMY ZESTY SASSY HAZED RAGER FROTH SNEER SNIDE BRASH WEIRD AWFUL PISSY BOOZY GRUMP ZONED HYPED LURID BITCH FUCKS SHITS DILDO BOOBS BONER KINKY PERVY HORNY ABHOR ABIDE ABUSE ACHES ACIDS ACORN ACRID ACTOR ADIEU ADMIN ADMIT ADOPT ADORE ADULT AGENT AGONY ALARM ALBUM ALIEN ALIVE ALLOY ALONE ALTER AMASS AMAZE AMBER AMBLE AMEND AMONG AMUSE ANGER ANGST ANNOY ANTIC ANVIL AORTA APART APPLE APPLY APRON ARGUE ARISE ARSON ARTSY ASIDE ASKEW ASSET AUDIO AUDIT AVERT AVOID AWARD AWARE AXIOM BACON BADGE BADLY BAGEL BAKER BANAL BANJO BARGE BASIC BASIL BASIN BATCH BATHE BEACH BEARD BEAST BEFIT BEGUN BEING BELCH BELLY BELOW BENCH BERTH BINGE BIRTH BLACK BLADE BLAME BLAND BLANK BLARE BLAST BLEAK BLEAT BLEED BLEEP BLEND BLESS BLIMP BLIND BLINK BLISS BLITZ BLOAT BLOCK BLOKE BLOOD BLOOM BLOWN BLUER BLUFF BLUNT BLURB BLURT BLUSH BOAST BONEY BONUS BOOST BOOZE BOSSY BOTCH BOUGH BOUND BOWEL BRAIN BRAKE BRAND BRAVE BRAWL BREAD BREAK BRIBE BRICK BRIDE BRIEF BRINE BRING BRINK BROAD BROIL BROKE BROOM BROTH BROWN BRUNT BRUSH BRUTE BUDDY BUDGE BUGGY BUILD BULGE BULLY BUNCH BURLY BURNT BURST BUTCH BUYER CABIN CABLE CACHE CACTI CAGED CANDY CANNY CANOE CANON CAPER CARGO CARRY CARVE CATCH CATER CAUSE CEDAR CHAFE CHAIN CHAIR CHALK CHAMP CHANT CHARD CHARM CHART CHASE CHASM CHEAP CHEAT CHECK CHEEK CHEER CHESS CHEST CHIEF CHILD CHILL CHIME CHINA CHIRP CHOIR CHOKE CHOMP CHORD CHORE CHOSE CHUCK CHUMP CHUNK CHURN CHUTE CIDER CINCH CIVIC CIVIL CLAIM CLAMP CLASH CLASP CLEAN CLEAR CLEAT CLEFT CLERK CLICK CLIFF CLIMB CLING CLINK CLOAK CLOCK CLONE CLOSE CLOTH CLOUD CLOVE CLOWN CLUCK CLUMP COACH COAST COBRA COCOA COLON COMET COMFY COMIC COMMA CONDO CONIC COUCH COUGH COULD COUNT COURT COVER COWER CRACK CRAFT CRAMP CRANE CRANK CRASS CRATE CRAWL CRAZE CRAZY CREAK CREAM CREDO CREEP CREPE CREPT CREST CRICK CRIED CRIME CRIMP CRISP CROAK CRONE CROOK CROSS CROUP CROWD CROWN CRUDE CRUEL CRUMB CRUSH CRUST CUBIC CURVE CYCLE CYNIC DADDY DAISY DANCE DANDY DATED DEATH DEBIT DEBUG DECAY DECOR DEFER DELAY DELTA DEMON DENSE DEPTH DERBY DETOX DIARY DICEY DITCH DITTO DIZZY DODGE DOING DOUBT DOUGH DOWRY DOZEN DRAFT DRAIN DRANK DRAPE DREAD DREAM DRESS DRIER DRIFT DRINK DRIVE DROLL DROWN DRUNK DRYLY DUMPY DUSTY EAGER EARLY EARTH EATEN EERIE EIGHT ELATE ELBOW ELDER ELECT ELITE ELOPE EMPTY ENACT ENJOY ENNUI ENSUE ENTER EPOCH EQUAL ERROR ERUPT ESSAY ETHER ETHIC EVADE EVENT EVERY EVOKE EXACT EXILE EXIST EXTRA FABLE FANCY FATAL FAULT FAVOR FEAST FELON FETCH FEVER FICUS FIERY FIGHT FINAL FINCH FIRED FIRST FIZZY FLAIR FLAKE FLAME FLARE FLASH FLASK FLEET FLESH FLICK FLING FLIRT FLOAT FLOOD FLOOR FLOSS FLOUR FLUNK FLUSH FOCUS FOLLY FORCE FORGE FORGO FORTH FOUND FOYER FRAIL FRAME FRAUD FREAK FREED FRESH FRIAR FRIED FRISK FROCK FROST FROWN FUDGE FUNGI FUNKY FUROR FUSSY FUZZY GAFFE GASSY GAUDY GAVEL GAWKY GHOST GIANT GIDDY GIVEN GLARE GLASS GLAZE GLOAT GLOOM GLORY GLOVE GLYPH GNASH GONER GOOEY GOOFY GRACE GRADE GRAFT GRAIN GRAND GRANT GRAPE GRAPH GRASP GRASS GRATE GRAVE GRAVY GRAZE GREAT GREED GRIEF GRIME GRIMY GRIND GROAN GROOM GROPE GROSS GROUP GROUT GROVE GROWL GUARD GUEST GUIDE GUSTO HABIT HAIRY HAPPY HARDY HARSH HASTE HATER HAUNT HAVOC HAZEL HEART HEATH HEAVE HEIST HELIX HELLO HENCE HERON HINGE HIPPO HITCH HOARD HOBBY HOMER HONEY HONOR HORDE HORSE HOTEL HOTLY HOUND HOUSE HUMAN HUMID HUMOR HURRY HUSKY HUTCH ICILY IDIOM IDIOT IMAGE IMBUE IMPLY INANE INBOX INDEX INFER INPUT INTER INTRO IRATE IRONY ISLET ITCHY IVORY JAZZY JELLY JERKY JETTY JOINT JOLLY JUDGE JUICE JUMBO JUMPY JUNKY KAPPA KARMA KAYAK KEBAB KHAKI KIOSK KNEEL KNIFE KNOCK KNOLL KNOWN KOALA LABEL LAGER LANCE LANKY LAPSE LARGE LARVA LATCH LATER LATTE LAUGH LAYER LEACH LEAKY LEARN LEASE LEECH LEERY LEFTY LEGAL LEMON LEVEL LEVER LIGHT LIKEN LILAC LIMBO LIMIT LINEN LINGO LIVER LOATH LOBBY LOCAL LOCUS LODGE LOFTY LOGIC LOOPY LOSER LOUSE LOVER LOWER LOWLY LOYAL LUCID LUCKY LUNAR LUNCH LUSTY LYING MACRO MADAM MAGIC MAGMA MAJOR MAMBO MANIA MANOR MAPLE MARCH MARRY MARSH MATCH MAUVE MAXIM MAYBE MEATY MEDAL MERCY MERGE MERIT MERRY METAL MICRO MIGHT MIMIC MINOR MINTY MINUS MIRTH MISER MISSY MOCHA MODEL MOGUL MOIST MOLAR MONEY MONTH MORAL MORON MOTEL MOTOR MOUNT MOURN MOUSE MOUTH MOVIE MOWER MUDDY MULCH MUMMY MUNCH MURAL MURKY MUSHY MUSIC MUSTY NADIR NASTY NATAL NERDY NEVER NEWER NICER NIGHT NINJA NOBLE NOISE NOISY NORTH NOSEY NOTCH NOVEL NUDGE NURSE NUTTY NYMPH OBESE OCCUR OCEAN OFFER OFTEN OLDER OLIVE OMEGA ONION ONSET OPERA OPIUM ORBIT ORDER ORGAN OTHER OUGHT OUNCE OUTER OVARY OWNER OXIDE PAINT PANEL PAPER PARRY PARTY PASTA PATCH PAUSE PAYEE PEACH PEARL PECAN PEDAL PENAL PENNE PHASE PHONE PHOTO PIANO PICKY PIECE PIETY PILOT PINCH PINKY PIOUS PITHY PIVOT PIXEL PIZZA PLACE PLAID PLAIN PLANE PLANK PLANT PLATE PLAZA PLEAD PLEAT PLUCK PLUMB PLUMP PLUSH POESY POINT POISE POKER POLAR POLKA POUND POWER PRANK PRESS PRICE PRICK PRIDE PRIME PRINT PRIOR PRISM PRIVY PRIZE PROBE PRONE PROOF PROUD PROVE PROWL PROXY PRUDE PSALM PULPY PUNCH PUPPY PURGE PUSHY QUAKE QUALM QUEEN QUERY QUEST QUEUE QUICK QUIET QUILL QUIRK QUITE QUOTA QUOTE RACER RADAR RADIO RALLY RANCH RANDY RANGE RAPID RATIO RAVEN REACT READY REALM REBEL RECAP RECUR REDDY REIGN RELAX RELIC REMIT RENEW REPEL REPLY RESET RETRO RHINO RIDER RIDGE RIFLE RIGHT RIGID RINSE RIPEN RISEN RISKY RIVAL RIVER ROACH ROBIN ROCKY RODEO ROGUE ROOMY ROOST ROTOR ROUGE ROUGH ROUND ROUSE ROUTE ROYAL RUDDY RUGBY RULER RUMBA RURAL RUSTY SADLY SALON SALSA SAUCE SAVVY SCALE SCALP SCAMP SCANT SCARE SCARF SCARY SCENE SCENT SCOFF SCOLD SCONE SCOOP SCOPE SCORE SCORN SCOUR SCOUT SCRAM SCRAP SCREW SCRUB SEDAN SEEDY SENSE SEPIA SERUM SERVE SEVEN SEVER SHACK SHADE SHAKE SHANK SHAPE SHARE SHARK SHARP SHAVE SHAWL SHEAR SHEEN SHEET SHELF SHELL SHINE SHINY SHIRE SHIRK SHIRT SHOAL SHOCK SHONE SHOOT SHORE SHORT SHOUT SHOVE SHRED SHREW SHRUB SHRUG SIEGE SIEVE SIGHT SILKY SILLY SINCE SIREN SIXTH SIXTY SKATE SKEIN SKILL SKIMP SKIRT SKULK SKULL SLACK SLAIN SLANG SLANT SLASH SLATE SLEEK SLEEP SLEET SLICE SLICK SLIME SLIMY SLING SLINK SLOPE SLOSH SLOTH SLUMP SLUNG SLUSH SMACK SMALL SMART SMASH SMEAR SMELL SMELT SMILE SMIRK SMITE SMITH SMOCK SMOKE SMOKY SMOTE SNACK SNAIL SNAKE SNARE SNARL SNEAK SNIFF SNIPE SNOOP SNORE SNORT SNOUT SNOWY SOAPY SOBER SOLAR SOLID SOLVE SONAR SONIC SORRY SOUND SOUTH SPACE SPADE SPANK SPARE SPARK SPASM SPAWN SPEAK SPEAR SPECK SPEED SPELL SPEND SPENT SPICE SPICY SPIED SPIEL SPIKE SPIKY SPILL SPINE SPINY SPIRE SPLAT SPLIT SPOIL SPOKE SPOOF SPOOK SPOON SPORE SPORT SPOUT SPRAY SPREE SPRIG SPUNK SPURN SQUAD SQUAT STACK STAFF STAGE STAIN STALK STAMP STAND STANK STARE STARK START STASH STATE STEAD STEAK STEAL STEAM STEEL STEEP STEER STICK STIFF STILL STING STINK STINT STOCK STOIC STOMP STONE STOOL STOOP STORE STORK STORM STORY STOUT STOVE STRAP STRAW STRIP STRUT STUCK STUDY STUFF STUMP STUNG STUNK STUNT STYLE SUGAR SUITE SULKY SUNNY SUPER SURER SURGE SURLY SUSHI SWAMP SWARM SWEAR SWEEP SWEET SWELL SWEPT SWIFT SWILL SWINE SWING SWIRL SWORD TABBY TABLE TABOO TACIT TACKY TANGO TANGY TAPER TARDY TAROT TASTE TASTY TATTY TAUNT TEACH TEARY TEASE TEMPO TENSE TENTH TEPID TERSE TESTY THANK THEFT THEME THERE THESE THICK THIEF THIGH THING THINK THIRD THORN THOSE THREE THREW THROB THROW THUMB THUMP TIDAL TIGER TIGHT TILDE TIMER TIMID TITAN TITLE TOAST TODAY TOKEN TONAL TONIC TOOTH TOPAZ TOPIC TORCH TORSO TOTAL TOUCH TOUGH TRACE TRACK TRACT TRADE TRAIL TRAIN TRAIT TRAMP TRASH TREAD TREAT TREND TRIAD TRIAL TRIBE TRICK TRIED TRIPE TRITE TROOP TROPE TROUT TRUCE TRUCK TRUER TRULY TRUNK TRUST TRUTH TULIP TUMMY TWEAK TWEED TWEET TWICE TWINE TWIRL TWIST UDDER ULTRA UMBRA UNARM UNCLE UNCUT UNDER UNDID UNFED UNFIT UNIFY UNION UNITE UNITY UNMET UNSET UNTIE UNTIL UNWED UNZIP UPPER UPSET URBAN URINE USAGE USHER USUAL USURP UTTER VAGUE VALET VALID VALOR VALUE VALVE VAPID VAPOR VAULT VAUNT VENOM VENUE VERGE VERSE VERVE VIDEO VIGIL VIGOR VILLA VINYL VIPER VIRAL VIRUS VISIT VISOR VISTA VITAL VIVID VIXEN VOGUE VOICE VOILA VOMIT VOTER VOUCH VOWEL VYING WACKY WAFER WAGER WAGON WAIST WAIVE WALTZ WARTY WASTE WATCH WATER WAVER WEARY WEAVE WEDGE WEEDY WEIGH WELCH WELSH WHACK WHALE WHARF WHEAT WHEEL WHERE WHICH WHIFF WHILE WHINE WHINY WHIRL WHISK WHITE WHOLE WHOOP WHOSE WIDEN WIDER WIDOW WIDTH WIELD WIGHT WILLY WINCE WINCH WINDY WISER WITCH WITTY WOKEN WOMAN WOMEN WORDY WORLD WORRY WORSE WORTH WOULD WOUND WOVEN WRACK WRATH WREAK WREST WRING WRIST WRITE WRONG WROTE WRUNG WRYLY YACHT YEARN YEAST YIELD YOUNG YOUTH ZEBRA`.split(/\s+/);
@@ -103,10 +111,21 @@ const VALID_GUESSES = new Set([...(window.VALID_WORDS || []), ...WORDS.map(({ wo
 
 const EMOJIS = ["😀", "😎", "🤠", "🤖", "👻", "🧙", "🥸", "😈", "🤡", "👽", "🦄", "🐸", "🦖", "🐙", "🦀", "🍕", "🌮", "🍄", "🧃", "🪩", "🚀", "⚡", "🔥", "💅"];
 const KEYS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+const DOODLE_COLORS = ["#111111", "#ff5c5c", "#68d8ff", "#72e06a", "#ffd24a", "#ff7ab8"];
+const DOODLE_SYNC_KEY = "funny-team-wordle-doodles-sync";
+const ARTICLE_IMAGE_CACHE = new Map();
+let activePreviewItem = null;
+let activeArticleItem = null;
+let doodleEnabled = false;
+let doodleColor = DOODLE_COLORS[0];
+let activeDoodlePath = null;
+let doodlePointerId = null;
+let doodleChannel = null;
 
 const defaultState = {
   usedWords: [],
   currentWord: null,
+  doodles: { dateKey: null, paths: [] },
   players: createTeamPlayers(),
   activePlayerId: null,
   selectedMemberId: null,
@@ -115,7 +134,6 @@ const defaultState = {
 let state = loadState();
 let currentGuess = "";
 normalizeState();
-randomizePlayerEmojis();
 ensureUniquePlayerEmojis();
 if (!state.activePlayerId) state.activePlayerId = state.players[0].id;
 const activeDateKey = todayKey();
@@ -123,10 +141,24 @@ if (state.currentWord?.word?.length !== WORD_LENGTH || !ANSWER_WORDS.has(state.c
   state.currentWord = null;
 }
 if (!state.currentWord) pickNewWord(activeDateKey);
+ensureDoodleState(activeDateKey);
 
 const els = {
   board: document.querySelector("#board"),
   keyboard: document.querySelector("#keyboard"),
+  gamePlayArea: document.querySelector("#gamePlayArea"),
+  doodleCanvas: document.querySelector("#doodleCanvas"),
+  pencilToggle: document.querySelector("#pencilToggle"),
+  doodleMenu: document.querySelector("#doodleMenu"),
+  colorSwatches: document.querySelector("#colorSwatches"),
+  clearDoodlesButton: document.querySelector("#clearDoodlesButton"),
+  articlePanel: document.querySelector("#articlePanel"),
+  articleSource: document.querySelector("#articleSource"),
+  articleTitle: document.querySelector("#articleTitle"),
+  articleSummary: document.querySelector("#articleSummary"),
+  articleImage: document.querySelector("#articleImage"),
+  articleLink: document.querySelector("#articleLink"),
+  articleCloseButton: document.querySelector("#articleCloseButton"),
   hintBox: document.querySelector("#hintBox"),
   hintButton: document.querySelector("#hintButton"),
   newWordButton: document.querySelector("#newWordButton"),
@@ -138,10 +170,8 @@ const els = {
   identityButtons: document.querySelector("#identityButtons"),
   switchPlayerButton: document.querySelector("#switchPlayerButton"),
   headlineTrack: document.querySelector("#headlineTrack"),
+  headlinePreview: document.querySelector("#headlinePreview"),
   leaderboardList: document.querySelector("#leaderboardList"),
-  winsStat: document.querySelector("#winsStat"),
-  streakStat: document.querySelector("#streakStat"),
-  playedStat: document.querySelector("#playedStat"),
 };
 
 function loadState() {
@@ -161,9 +191,6 @@ function blankTeamPlayer(name) {
     id: memberId(name),
     name,
     emoji: randomEmoji(),
-    wins: 0,
-    played: 0,
-    streak: 0,
   };
 }
 
@@ -177,8 +204,12 @@ function normalizeState() {
         .map((entry) => typeof entry === "string" ? { word: entry, dateKey: null } : entry)
         .filter((entry) => entry?.word && ANSWER_WORDS.has(entry.word))
     : [];
-  const nextPlayers = createTeamPlayers();
-  state.players = nextPlayers;
+  state.doodles = state.doodles && Array.isArray(state.doodles.paths) ? state.doodles : { dateKey: null, paths: [] };
+  const savedPlayers = new Map((Array.isArray(state.players) ? state.players : []).map((player) => [player.id, player]));
+  state.players = createTeamPlayers().map((player) => {
+    const savedEmoji = savedPlayers.get(player.id)?.emoji;
+    return { ...player, emoji: EMOJIS.includes(savedEmoji) ? savedEmoji : player.emoji };
+  });
   state.activePlayerId = state.players.some((player) => player.id === state.activePlayerId) ? state.activePlayerId : state.selectedMemberId;
   state.selectedMemberId = state.players.some((player) => player.id === state.selectedMemberId) ? state.selectedMemberId : null;
 }
@@ -217,6 +248,11 @@ function ensureUniquePlayerEmojis() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function ensureDoodleState(dateKey = todayKey()) {
+  if (state.doodles?.dateKey === dateKey && Array.isArray(state.doodles.paths)) return;
+  state.doodles = { dateKey, paths: [] };
 }
 
 function activePlayer() {
@@ -276,6 +312,9 @@ function recordUsedWord(word, dateKey) {
 function pickNewWord(dateKey = todayKey()) {
   const chosen = dailyWordForDate(dateKey);
   state.currentWord = { ...chosen, dateKey, startedAt: new Date().toISOString(), runs: {} };
+  state.doodles = { dateKey, paths: [] };
+  randomizePlayerEmojis();
+  ensureUniquePlayerEmojis();
   recordUsedWord(chosen.word, dateKey);
   currentGuess = "";
   saveState();
@@ -364,10 +403,8 @@ function render() {
   const canGuess = canGuessThisLine(run);
   els.currentPlayerName.textContent = player.name;
   els.emojiButton.textContent = player.emoji;
-  els.winsStat.textContent = player.wins;
-  els.streakStat.textContent = player.streak;
-  els.playedStat.textContent = player.played;
   els.dayLabel.textContent = "The Board";
+  ensureDoodleState(state.currentWord.dateKey);
   els.hintBox.hidden = !run.hintUsed;
   els.hintBox.textContent = run.hintUsed ? state.currentWord.hint : "";
   els.hintButton.disabled = run.hintUsed || !canGuess;
@@ -378,6 +415,8 @@ function render() {
   renderBoard(run, canGuess);
   renderKeyboard(run, canGuess);
   renderLeaderboard();
+  renderDoodleControls();
+  requestAnimationFrame(resizeDoodleCanvas);
   saveState();
 }
 
@@ -394,8 +433,205 @@ function playerResultLabel(run) {
   return `TURN ${currentLineIndex() + 1}`;
 }
 
+let audioContext = null;
+
+function getAudioContext() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+  audioContext ||= new AudioContext();
+  if (audioContext.state === "suspended") audioContext.resume();
+  return audioContext;
+}
+
+function tone(frequency, start = 0, duration = 0.08, type = "square", volume = 0.04) {
+  const context = getAudioContext();
+  if (!context) return;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const startsAt = context.currentTime + start;
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startsAt);
+  gain.gain.setValueAtTime(0.0001, startsAt);
+  gain.gain.exponentialRampToValueAtTime(volume, startsAt + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + duration);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(startsAt);
+  oscillator.stop(startsAt + duration + 0.02);
+}
+
+function noise(start = 0, duration = 0.08, volume = 0.035) {
+  const context = getAudioContext();
+  if (!context) return;
+  const buffer = context.createBuffer(1, context.sampleRate * duration, context.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+  const source = context.createBufferSource();
+  const gain = context.createGain();
+  source.buffer = buffer;
+  const startsAt = context.currentTime + start;
+  gain.gain.setValueAtTime(volume, startsAt);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startsAt + duration);
+  source.connect(gain);
+  gain.connect(context.destination);
+  source.start(startsAt);
+}
+
+const sounds = {
+  tap() {
+    tone(540, 0, 0.045, "square", 0.025);
+  },
+  backspace() {
+    tone(260, 0, 0.05, "triangle", 0.03);
+  },
+  invalid() {
+    tone(140, 0, 0.09, "sawtooth", 0.035);
+    tone(95, 0.08, 0.11, "sawtooth", 0.03);
+  },
+  submit() {
+    tone(360, 0, 0.055, "square", 0.03);
+    tone(520, 0.06, 0.065, "square", 0.025);
+  },
+  hint() {
+    noise(0, 0.07, 0.025);
+    tone(720, 0.06, 0.08, "triangle", 0.035);
+  },
+  switch() {
+    tone(420, 0, 0.05, "triangle", 0.025);
+    tone(620, 0.045, 0.05, "triangle", 0.025);
+  },
+  win() {
+    [523, 659, 784, 1047].forEach((frequency, index) => tone(frequency, index * 0.075, 0.12, "square", 0.035));
+  },
+  lose() {
+    [330, 247, 196].forEach((frequency, index) => tone(frequency, index * 0.09, 0.13, "sawtooth", 0.03));
+  },
+};
+
+function renderDoodleControls() {
+  els.pencilToggle.classList.toggle("is-active", doodleEnabled);
+  els.pencilToggle.setAttribute("aria-pressed", String(doodleEnabled));
+  els.pencilToggle.textContent = "✎";
+  els.doodleCanvas.classList.toggle("is-drawing", doodleEnabled);
+  els.colorSwatches.innerHTML = "";
+  DOODLE_COLORS.forEach((color) => {
+    const swatch = document.createElement("button");
+    swatch.type = "button";
+    swatch.className = `color-swatch ${color === doodleColor ? "is-active" : ""}`;
+    swatch.style.background = color;
+    swatch.setAttribute("aria-label", `Use ${color}`);
+    swatch.addEventListener("click", () => {
+      doodleColor = color;
+      sounds.tap();
+      renderDoodleControls();
+    });
+    els.colorSwatches.append(swatch);
+  });
+}
+
+function doodlePointFromEvent(event) {
+  const rect = els.doodleCanvas.getBoundingClientRect();
+  return {
+    x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+    y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+  };
+}
+
+function doodleContext() {
+  const context = els.doodleCanvas.getContext("2d");
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  return context;
+}
+
+function drawDoodlePath(path) {
+  if (!path.points?.length) return;
+  const context = doodleContext();
+  const width = els.doodleCanvas.clientWidth;
+  const height = els.doodleCanvas.clientHeight;
+  context.strokeStyle = path.color;
+  context.lineWidth = Math.max(3, Math.round(Math.min(width, height) * 0.008));
+  context.beginPath();
+  path.points.forEach((point, index) => {
+    const x = point.x * width;
+    const y = point.y * height;
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.stroke();
+}
+
+function drawDoodles() {
+  const context = doodleContext();
+  context.clearRect(0, 0, els.doodleCanvas.clientWidth, els.doodleCanvas.clientHeight);
+  state.doodles.paths.forEach(drawDoodlePath);
+  if (activeDoodlePath) drawDoodlePath(activeDoodlePath);
+}
+
+function resizeDoodleCanvas() {
+  const rect = els.gamePlayArea.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(rect.width));
+  const height = Math.max(1, Math.round(rect.height));
+  if (els.doodleCanvas.width !== Math.round(width * ratio) || els.doodleCanvas.height !== Math.round(height * ratio)) {
+    els.doodleCanvas.width = Math.round(width * ratio);
+    els.doodleCanvas.height = Math.round(height * ratio);
+    els.doodleCanvas.style.width = `${width}px`;
+    els.doodleCanvas.style.height = `${height}px`;
+    const context = doodleContext();
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+  drawDoodles();
+}
+
+function broadcastDoodles() {
+  const payload = { dateKey: state.doodles.dateKey, paths: state.doodles.paths };
+  try {
+    doodleChannel?.postMessage(payload);
+  } catch {}
+  localStorage.setItem(DOODLE_SYNC_KEY, JSON.stringify({ ...payload, sentAt: Date.now() }));
+}
+
+function applySyncedDoodles(payload) {
+  if (!payload || payload.dateKey !== state.currentWord.dateKey || !Array.isArray(payload.paths)) return;
+  state.doodles = { dateKey: payload.dateKey, paths: payload.paths };
+  activeDoodlePath = null;
+  saveState();
+  drawDoodles();
+}
+
+function startDoodle(event) {
+  if (!doodleEnabled || !els.articlePanel.hidden) return;
+  event.preventDefault();
+  doodlePointerId = event.pointerId;
+  els.doodleCanvas.setPointerCapture(doodlePointerId);
+  activeDoodlePath = { color: doodleColor, points: [doodlePointFromEvent(event)] };
+}
+
+function moveDoodle(event) {
+  if (!activeDoodlePath || event.pointerId !== doodlePointerId) return;
+  event.preventDefault();
+  activeDoodlePath.points.push(doodlePointFromEvent(event));
+  drawDoodles();
+}
+
+function finishDoodle(event) {
+  if (!activeDoodlePath || event.pointerId !== doodlePointerId) return;
+  event.preventDefault();
+  if (activeDoodlePath.points.length > 1) {
+    ensureDoodleState(state.currentWord.dateKey);
+    state.doodles.paths.push(activeDoodlePath);
+    saveState();
+    broadcastDoodles();
+  }
+  activeDoodlePath = null;
+  doodlePointerId = null;
+  drawDoodles();
+}
+
 function chooseMember(playerId) {
   if (!state.players.some((player) => player.id === playerId)) return;
+  sounds.switch();
   state.selectedMemberId = playerId;
   state.activePlayerId = playerId;
   currentGuess = "";
@@ -426,6 +662,7 @@ function renderEmojiGrid() {
     if (emoji === active.emoji) button.classList.add("selected");
     button.addEventListener("click", () => {
       if (usedByOthers.has(emoji)) return;
+      sounds.switch();
       active.emoji = emoji;
       els.emojiGrid.hidden = true;
       render();
@@ -512,6 +749,7 @@ function renderLeaderboard() {
     row.className = "leaderboard-row";
     row.innerHTML = `<strong>${player.emoji} ${player.name}</strong><small>${playerResultLabel(run)} · ${lettersFound(run)}/${WORD_LENGTH} letters</small>`;
     row.addEventListener("click", () => {
+      sounds.switch();
       state.activePlayerId = player.id;
       currentGuess = "";
       render();
@@ -524,6 +762,74 @@ function decodeHeadline(text) {
   const textarea = document.createElement("textarea");
   textarea.innerHTML = text;
   return textarea.value;
+}
+
+function stripMarkup(text = "") {
+  const container = document.createElement("div");
+  container.innerHTML = text;
+  return decodeHeadline(container.textContent || container.innerText || "").replace(/\s+/g, " ").trim();
+}
+
+const DEFAULT_PREVIEW_TEXT = "No story text came through the feed, but the headline has enough drama to discuss.";
+
+function fullPreviewText(text, fallback = DEFAULT_PREVIEW_TEXT) {
+  const clean = stripMarkup(text);
+  return clean || fallback;
+}
+
+function trimSummary(text, fallback = DEFAULT_PREVIEW_TEXT) {
+  const clean = fullPreviewText(text, fallback);
+  if (!clean) return fallback;
+  return clean.length > 210 ? `${clean.slice(0, 207).trim()}...` : clean;
+}
+
+function imageFromMarkup(text = "") {
+  const container = document.createElement("div");
+  container.innerHTML = text;
+  const image = container.querySelector("img");
+  return image?.getAttribute("src")
+    || image?.getAttribute("data-src")
+    || image?.getAttribute("data-lazy-src")
+    || "";
+}
+
+function imageFromXmlItem(item) {
+  const mediaContent = item.getElementsByTagName("media:content")[0];
+  const mediaThumbnail = item.getElementsByTagName("media:thumbnail")[0];
+  const enclosure = item.querySelector("enclosure");
+  return mediaContent?.getAttribute("url")
+    || mediaThumbnail?.getAttribute("url")
+    || (enclosure?.getAttribute("type")?.startsWith("image/") ? enclosure.getAttribute("url") : "")
+    || "";
+}
+
+function imageFromJsonItem(item) {
+  return item.thumbnail
+    || item.enclosure?.link
+    || item.enclosure?.url
+    || "";
+}
+
+function normalizeImageUrl(url, baseUrl) {
+  if (!url) return "";
+  if (url.startsWith("//")) return `https:${url}`;
+  try {
+    return new URL(url, baseUrl).href;
+  } catch {
+    return url;
+  }
+}
+
+function sourceJsonUrl(source) {
+  return `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.feedUrl)}`;
+}
+
+function proxyUrl(url) {
+  return `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+}
+
+function sourceProxyUrl(source) {
+  return proxyUrl(source.feedUrl);
 }
 
 async function fetchRss(url) {
@@ -550,25 +856,141 @@ async function fetchJson(url) {
   }
 }
 
-function parseHeadlines(xmlText) {
+async function fetchArticleImage(item) {
+  if (!item.link) return "";
+  if (ARTICLE_IMAGE_CACHE.has(item.link)) return ARTICLE_IMAGE_CACHE.get(item.link);
+  try {
+    const html = await fetchRss(proxyUrl(item.link));
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const metaImage = doc.querySelector("meta[property='og:image'], meta[name='twitter:image'], meta[property='twitter:image']");
+    const image = normalizeImageUrl(metaImage?.getAttribute("content") || "", item.link);
+    ARTICLE_IMAGE_CACHE.set(item.link, image);
+    return image;
+  } catch {
+    ARTICLE_IMAGE_CACHE.set(item.link, "");
+    return "";
+  }
+}
+
+async function hydrateArticleImage(item) {
+  if (item.image) return;
+  const image = await fetchArticleImage(item);
+  if (!image) return;
+  item.image = image;
+  if (activePreviewItem === item && !els.headlinePreview.hidden) renderPreviewContent(els.headlinePreview, item);
+  if (activeArticleItem === item && !els.articlePanel.hidden) {
+    els.articleImage.src = image;
+    els.articleImage.hidden = false;
+  }
+}
+
+function parseHeadlines(xmlText, source) {
   const doc = new DOMParser().parseFromString(xmlText, "text/xml");
   return [...doc.querySelectorAll("item")]
-    .slice(0, 10)
-    .map((item) => ({
-      title: decodeHeadline(item.querySelector("title")?.textContent?.trim() || ""),
-      link: item.querySelector("link")?.textContent?.trim() || "https://www.tmz.com/",
-    }))
+    .slice(0, source.limit)
+    .map((item) => {
+      const rawStory = item.querySelector("content\\:encoded")?.textContent || item.querySelector("description")?.textContent || "";
+      return {
+        source: source.name,
+        title: decodeHeadline(item.querySelector("title")?.textContent?.trim() || ""),
+        link: item.querySelector("link")?.textContent?.trim() || source.homeUrl,
+        summary: trimSummary(rawStory),
+        body: fullPreviewText(rawStory),
+        image: imageFromXmlItem(item) || imageFromMarkup(rawStory),
+      };
+    })
     .filter((item) => item.title);
 }
 
-function parseJsonHeadlines(feed) {
+function parseJsonHeadlines(feed, source) {
   return (feed.items || [])
-    .slice(0, 10)
-    .map((item) => ({
-      title: decodeHeadline(item.title || ""),
-      link: item.link || "https://www.tmz.com/",
-    }))
+    .slice(0, source.limit)
+    .map((item) => {
+      const rawStory = item.content || item.description || item.contentSnippet || "";
+      return {
+        source: source.name,
+        title: decodeHeadline(item.title || ""),
+        link: item.link || source.homeUrl,
+        summary: trimSummary(rawStory),
+        body: fullPreviewText(rawStory),
+        image: imageFromJsonItem(item) || imageFromMarkup(rawStory),
+      };
+    })
     .filter((item) => item.title);
+}
+
+function uniqueHeadlines(headlines) {
+  const seen = new Set();
+  return headlines.filter((item) => {
+    const key = item.title.toLowerCase().replace(/\s+/g, " ").trim();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function renderPreviewContent(container, item) {
+  const summary = item.summary || trimSummary("");
+  container.innerHTML = "";
+  if (item.image) {
+    const image = document.createElement("img");
+    image.src = item.image;
+    image.alt = "";
+    container.append(image);
+  }
+
+  const copy = document.createElement("div");
+  const source = document.createElement("strong");
+  const title = document.createElement("h3");
+  const text = document.createElement("p");
+  source.textContent = item.source || "Headlines";
+  title.textContent = item.title;
+  text.textContent = summary;
+  copy.append(source, title, text);
+  container.append(copy);
+}
+
+function showHeadlinePreview(item) {
+  activePreviewItem = item;
+  els.headlineTrack.classList.add("is-paused");
+  renderPreviewContent(els.headlinePreview, item);
+  els.headlinePreview.hidden = false;
+  hydrateArticleImage(item);
+}
+
+function hideHeadlinePreview() {
+  activePreviewItem = null;
+  els.headlineTrack.classList.remove("is-paused");
+  els.headlinePreview.hidden = true;
+}
+
+function showArticlePanel(item) {
+  sounds.switch();
+  hideHeadlinePreview();
+  activeArticleItem = item;
+  els.headlineTrack.classList.add("is-paused");
+  els.gamePlayArea.hidden = true;
+  els.articlePanel.hidden = false;
+  els.articleSource.textContent = item.source || "Headlines";
+  els.articleTitle.textContent = item.title;
+  els.articleSummary.textContent = item.body || item.summary || DEFAULT_PREVIEW_TEXT;
+  els.articleLink.href = item.link || "#";
+  if (item.image) {
+    els.articleImage.src = item.image;
+    els.articleImage.hidden = false;
+  } else {
+    els.articleImage.removeAttribute("src");
+    els.articleImage.hidden = true;
+  }
+  hydrateArticleImage(item);
+}
+
+function closeArticlePanel() {
+  sounds.switch();
+  activeArticleItem = null;
+  els.headlineTrack.classList.remove("is-paused");
+  els.articlePanel.hidden = true;
+  els.gamePlayArea.hidden = false;
 }
 
 function renderHeadlines(headlines) {
@@ -578,12 +1000,24 @@ function renderHeadlines(headlines) {
     const group = document.createElement("div");
     group.className = "ticker-group";
     group.setAttribute("aria-hidden", loop === 1 ? "true" : "false");
-    items.forEach(({ title, link }) => {
+    items.forEach((item) => {
+      const { source, title, link } = item;
       const anchor = document.createElement("a");
       anchor.href = link;
       anchor.target = "_blank";
       anchor.rel = "noopener";
       anchor.textContent = title;
+      anchor.addEventListener("mouseenter", () => showHeadlinePreview(item));
+      anchor.addEventListener("mouseover", () => showHeadlinePreview(item));
+      anchor.addEventListener("pointerenter", () => showHeadlinePreview(item));
+      anchor.addEventListener("mouseleave", hideHeadlinePreview);
+      anchor.addEventListener("pointerleave", hideHeadlinePreview);
+      anchor.addEventListener("focus", () => showHeadlinePreview(item));
+      anchor.addEventListener("blur", hideHeadlinePreview);
+      anchor.addEventListener("click", (event) => {
+        event.preventDefault();
+        showArticlePanel(item);
+      });
       group.append(anchor);
 
       const divider = document.createElement("span");
@@ -595,21 +1029,38 @@ function renderHeadlines(headlines) {
   }
 }
 
-async function loadHeadlines() {
+async function loadHeadlinesForSource(source) {
   try {
-    renderHeadlines(parseJsonHeadlines(await fetchJson(TMZ_JSON_URL)));
+    return parseHeadlines(await fetchRss(source.feedUrl), source);
   } catch {
     try {
-      renderHeadlines(parseHeadlines(await fetchRss(TMZ_PROXY_URL)));
+      return parseJsonHeadlines(await fetchJson(sourceJsonUrl(source)), source);
     } catch {
-      renderHeadlines(FALLBACK_HEADLINES);
+      try {
+        return parseHeadlines(await fetchRss(sourceProxyUrl(source)), source);
+      } catch {
+        return [];
+      }
     }
   }
 }
 
+async function loadHeadlines() {
+  const sourceResults = await Promise.all(HEADLINE_SOURCES.map(loadHeadlinesForSource));
+  renderHeadlines(uniqueHeadlines(sourceResults.flat()));
+}
+
 function handleKey(key) {
+  if (!els.articlePanel.hidden) {
+    if (key === "Escape") closeArticlePanel();
+    return;
+  }
+
   const run = activeRun();
-  if (!canGuessThisLine(run)) return;
+  if (!canGuessThisLine(run)) {
+    sounds.invalid();
+    return;
+  }
 
   if (key === "ENTER") {
     submitGuess();
@@ -618,55 +1069,67 @@ function handleKey(key) {
 
   if (key === "⌫" || key === "Backspace") {
     currentGuess = currentGuess.slice(0, -1);
+    sounds.backspace();
     render();
     return;
   }
 
   if (/^[A-Z]$/.test(key) && currentGuess.length < WORD_LENGTH) {
     currentGuess += key;
+    sounds.tap();
     render();
+  } else if (/^[A-Z]$/.test(key)) {
+    sounds.invalid();
   }
 }
 
 function submitGuess() {
   const run = activeRun();
   if (!canGuessThisLine(run)) {
+    sounds.invalid();
     return;
   }
 
   if (currentGuess.length !== WORD_LENGTH) {
+    sounds.invalid();
     return;
   }
   if (!/^[A-Z]{5}$/.test(currentGuess)) {
+    sounds.invalid();
     return;
   }
   if (!VALID_GUESSES.has(currentGuess)) {
+    sounds.invalid();
     return;
   }
 
   const result = evaluateGuess(currentGuess, state.currentWord.word);
   run.guesses.push({ word: currentGuess, result });
   const won = result.every((stateName) => stateName === "correct");
-  if (won) completeRun(run, true);
-  else if (effectiveAttempts(run) >= MAX_ATTEMPTS) completeRun(run, false);
-  else switchToNextUnfinishedPlayer();
+  if (won) {
+    sounds.win();
+    completeRun(run, true);
+  } else if (effectiveAttempts(run) >= MAX_ATTEMPTS) {
+    sounds.lose();
+    completeRun(run, false);
+  } else {
+    sounds.submit();
+    switchToNextUnfinishedPlayer();
+  }
   currentGuess = "";
   render();
 }
 
 function completeRun(run, won) {
   if (run.status !== "playing") return;
-  const player = activePlayer();
   run.status = won ? "won" : "lost";
-  player.played += 1;
-  player.wins += won ? 1 : 0;
-  player.streak = won ? player.streak + 1 : 0;
   switchToNextUnfinishedPlayer();
 }
 
 els.hintButton.addEventListener("click", () => {
   const run = activeRun();
   if (run.hintUsed || run.status !== "playing") return;
+  sounds.hint();
   run.hintUsed = true;
   if (effectiveAttempts(run) >= MAX_ATTEMPTS) completeRun(run, false);
   render();
@@ -679,20 +1142,67 @@ els.newWordButton.addEventListener("click", () => {
 });
 
 els.emojiButton.addEventListener("click", () => {
+  sounds.tap();
   els.emojiGrid.hidden = !els.emojiGrid.hidden;
 });
 
 els.switchPlayerButton.addEventListener("click", () => {
+  sounds.switch();
   state.selectedMemberId = null;
   renderIdentityGate(true);
 });
 
+els.articleCloseButton.addEventListener("click", closeArticlePanel);
+
+els.pencilToggle.addEventListener("click", () => {
+  doodleEnabled = !doodleEnabled;
+  els.doodleMenu.hidden = !doodleEnabled;
+  sounds.switch();
+  renderDoodleControls();
+});
+
+els.clearDoodlesButton.addEventListener("click", () => {
+  ensureDoodleState(state.currentWord.dateKey);
+  state.doodles.paths = [];
+  activeDoodlePath = null;
+  saveState();
+  broadcastDoodles();
+  drawDoodles();
+  sounds.tap();
+});
+
+document.addEventListener("click", (event) => {
+  if (!doodleEnabled || event.target.closest(".doodle-tool")) return;
+  els.doodleMenu.hidden = true;
+});
+
+els.doodleCanvas.addEventListener("pointerdown", startDoodle);
+els.doodleCanvas.addEventListener("pointermove", moveDoodle);
+els.doodleCanvas.addEventListener("pointerup", finishDoodle);
+els.doodleCanvas.addEventListener("pointercancel", finishDoodle);
+
 document.addEventListener("keydown", (event) => {
   if (event.target.tagName === "INPUT") return;
   if (event.key === "Enter") handleKey("ENTER");
+  else if (event.key === "Escape") handleKey("Escape");
   else if (event.key === "Backspace") handleKey("Backspace");
   else if (/^[a-zA-Z]$/.test(event.key)) handleKey(event.key.toUpperCase());
 });
+
+window.addEventListener("resize", resizeDoodleCanvas);
+window.addEventListener("storage", (event) => {
+  if (event.key !== DOODLE_SYNC_KEY || !event.newValue) return;
+  try {
+    applySyncedDoodles(JSON.parse(event.newValue));
+  } catch {}
+});
+
+if ("BroadcastChannel" in window) {
+  doodleChannel = new BroadcastChannel("funny-team-wordle-doodles");
+  doodleChannel.addEventListener("message", (event) => applySyncedDoodles(event.data));
+}
+
+new ResizeObserver(resizeDoodleCanvas).observe(els.gamePlayArea);
 
 render();
 loadHeadlines();
