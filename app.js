@@ -2,6 +2,9 @@ const WORD_LENGTH = 5;
 const MAX_ATTEMPTS = 6;
 const STORAGE_KEY = "funny-team-wordle-v3";
 const TRIVIA_REVEAL_KEY = "funny-team-wordle-trivia-reveal-date";
+const CLIENT_ID_KEY = "funny-team-wordle-client-id";
+const SHARED_ROOM_KEY = "anchovies-wordle-main-v1";
+const SHARED_RELAY_URL = "https://gun.o8.is/gun";
 const DAILY_EPOCH = "2026-04-26";
 const TEAM_MEMBERS = ["Kira", "Sean", "Logan", "Alexis"];
 const WEATHER_LOCATIONS = {
@@ -202,6 +205,11 @@ let doodlePointerId = null;
 let doodleChannel = null;
 let gameChannel = null;
 let activeWeatherKey = "";
+let sharedNode = null;
+let sharedPublishTimer = null;
+let isApplyingSharedState = false;
+let lastSharedUpdate = 0;
+const clientId = getClientId();
 
 const defaultState = {
   usedWords: [],
@@ -266,6 +274,15 @@ const els = {
   leaderboardList: document.querySelector("#leaderboardList"),
 };
 
+function getClientId() {
+  let id = localStorage.getItem(CLIENT_ID_KEY);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(CLIENT_ID_KEY, id);
+  }
+  return id;
+}
+
 function loadState() {
   try {
     return { ...defaultState, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) };
@@ -296,7 +313,9 @@ function normalizeState() {
         .map((entry) => typeof entry === "string" ? { word: entry, dateKey: null } : entry)
         .filter((entry) => entry?.word && ANSWER_WORDS.has(entry.word))
     : [];
-  state.doodles = state.doodles && Array.isArray(state.doodles.paths) ? state.doodles : { dateKey: null, paths: [] };
+  state.doodles = state.doodles && Array.isArray(state.doodles.paths)
+    ? { dateKey: state.doodles.dateKey, paths: normalizeDoodlePaths(state.doodles.paths), clearedAt: state.doodles.clearedAt || 0 }
+    : { dateKey: null, paths: [], clearedAt: 0 };
   const savedPlayers = new Map((Array.isArray(state.players) ? state.players : []).map((player) => [player.id, player]));
   state.players = createTeamPlayers().map((player) => {
     const savedEmoji = savedPlayers.get(player.id)?.emoji;
@@ -344,7 +363,7 @@ function saveState() {
 
 function ensureDoodleState(dateKey = todayKey()) {
   if (state.doodles?.dateKey === dateKey && Array.isArray(state.doodles.paths)) return;
-  state.doodles = { dateKey, paths: [] };
+  state.doodles = { dateKey, paths: [], clearedAt: 0 };
 }
 
 function activePlayer() {
@@ -423,7 +442,7 @@ function recordUsedWord(word, dateKey) {
 function pickNewWord(dateKey = todayKey(), options = {}) {
   const chosen = options.forceNext ? nextUnusedWord(dateKey) : dailyWordForDate(dateKey);
   state.currentWord = { ...chosen, dateKey, startedAt: new Date().toISOString(), runs: {} };
-  state.doodles = { dateKey, paths: [] };
+  state.doodles = { dateKey, paths: [], clearedAt: Date.now() };
   randomizePlayerEmojis();
   ensureUniquePlayerEmojis();
   recordUsedWord(chosen.word, dateKey);
@@ -729,6 +748,20 @@ function renderDoodleControls() {
   });
 }
 
+function newDoodlePathId() {
+  return `${clientId}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeDoodlePaths(paths) {
+  return (Array.isArray(paths) ? paths : [])
+    .filter((path) => path && Array.isArray(path.points) && path.points.length)
+    .map((path) => ({
+      ...path,
+      id: path.id || `${path.color || "ink"}-${JSON.stringify(path.points)}`,
+      color: path.color || DOODLE_COLORS[0],
+    }));
+}
+
 function doodlePointFromEvent(event) {
   const rect = els.doodleCanvas.getBoundingClientRect();
   return {
@@ -785,16 +818,17 @@ function resizeDoodleCanvas() {
 }
 
 function broadcastDoodles() {
-  const payload = { dateKey: state.doodles.dateKey, paths: state.doodles.paths };
+  const payload = { dateKey: state.doodles.dateKey, paths: state.doodles.paths, clearedAt: state.doodles.clearedAt || 0 };
   try {
     doodleChannel?.postMessage(payload);
   } catch {}
   localStorage.setItem(DOODLE_SYNC_KEY, JSON.stringify({ ...payload, sentAt: Date.now() }));
+  publishSharedState();
 }
 
 function applySyncedDoodles(payload) {
   if (!payload || payload.dateKey !== state.currentWord.dateKey || !Array.isArray(payload.paths)) return;
-  state.doodles = { dateKey: payload.dateKey, paths: payload.paths };
+  state.doodles = { dateKey: payload.dateKey, paths: normalizeDoodlePaths(payload.paths), clearedAt: payload.clearedAt || 0 };
   activeDoodlePath = null;
   saveState();
   drawDoodles();
@@ -812,6 +846,7 @@ function broadcastGameReset() {
     gameChannel?.postMessage(payload);
   } catch {}
   localStorage.setItem(GAME_SYNC_KEY, JSON.stringify(payload));
+  publishSharedState();
 }
 
 function applySyncedGameReset(payload) {
@@ -819,7 +854,9 @@ function applySyncedGameReset(payload) {
   state.currentWord = payload.currentWord;
   state.usedWords = Array.isArray(payload.usedWords) ? payload.usedWords : state.usedWords;
   if (Array.isArray(payload.players)) state.players = payload.players;
-  state.doodles = payload.doodles && Array.isArray(payload.doodles.paths) ? payload.doodles : { dateKey: state.currentWord.dateKey, paths: [] };
+  state.doodles = payload.doodles && Array.isArray(payload.doodles.paths)
+    ? { dateKey: payload.doodles.dateKey, paths: normalizeDoodlePaths(payload.doodles.paths), clearedAt: payload.doodles.clearedAt || 0 }
+    : { dateKey: state.currentWord.dateKey, paths: [], clearedAt: 0 };
   activeDoodlePath = null;
   currentGuess = "";
   saveState();
@@ -827,12 +864,176 @@ function applySyncedGameReset(payload) {
   drawDoodles();
 }
 
+function sharedSnapshot() {
+  return {
+    clientId,
+    updatedAt: Date.now(),
+    currentWord: state.currentWord,
+    usedWords: state.usedWords,
+    players: state.players,
+    doodles: {
+      dateKey: state.doodles.dateKey,
+      paths: normalizeDoodlePaths(state.doodles.paths),
+      clearedAt: state.doodles.clearedAt || 0,
+    },
+  };
+}
+
+function publishSharedState() {
+  if (!sharedNode || isApplyingSharedState) return;
+  clearTimeout(sharedPublishTimer);
+  sharedPublishTimer = setTimeout(() => {
+    const snapshot = sharedSnapshot();
+    lastSharedUpdate = Math.max(lastSharedUpdate, snapshot.updatedAt);
+    sharedNode.put(JSON.stringify(snapshot));
+  }, 120);
+}
+
+function mergeUsedWords(remoteUsedWords) {
+  if (!Array.isArray(remoteUsedWords)) return false;
+  const existing = new Set(state.usedWords.map((entry) => `${entryWord(entry)}-${entryDateKey(entry) || ""}`));
+  let changed = false;
+  remoteUsedWords.forEach((entry) => {
+    const word = entryWord(entry);
+    if (!word) return;
+    const key = `${word}-${entryDateKey(entry) || ""}`;
+    if (existing.has(key)) return;
+    existing.add(key);
+    state.usedWords.push(typeof entry === "string" ? { word, dateKey: null } : entry);
+    changed = true;
+  });
+  return changed;
+}
+
+function mergePlayers(remotePlayers) {
+  if (!Array.isArray(remotePlayers)) return false;
+  const remoteById = new Map(remotePlayers.map((player) => [player.id, player]));
+  let changed = false;
+  state.players = state.players.map((player) => {
+    const remote = remoteById.get(player.id);
+    if (!remote || remote.emoji === player.emoji) return player;
+    changed = true;
+    return { ...player, emoji: remote.emoji };
+  });
+  ensureUniquePlayerEmojis();
+  return changed;
+}
+
+function mergeRuns(remoteRuns = {}) {
+  let changed = false;
+  let shouldRepublish = false;
+  state.currentWord.runs ||= {};
+  Object.entries(remoteRuns).forEach(([playerId, remoteRun]) => {
+    const localRun = state.currentWord.runs[playerId] || { guesses: [], hintUsed: false, status: "playing" };
+    const remoteGuessCount = Array.isArray(remoteRun?.guesses) ? remoteRun.guesses.length : 0;
+    const localGuessCount = Array.isArray(localRun.guesses) ? localRun.guesses.length : 0;
+    const remoteIsAhead = remoteGuessCount > localGuessCount || (remoteRun?.status !== "playing" && localRun.status === "playing");
+    const localIsAhead = localGuessCount > remoteGuessCount || (localRun.status !== "playing" && remoteRun?.status === "playing");
+
+    if (remoteIsAhead) {
+      state.currentWord.runs[playerId] = {
+        guesses: Array.isArray(remoteRun.guesses) ? remoteRun.guesses : [],
+        hintUsed: Boolean(remoteRun.hintUsed),
+        status: remoteRun.status || "playing",
+      };
+      changed = true;
+    } else if (localIsAhead) {
+      shouldRepublish = true;
+    } else if (remoteRun?.hintUsed && !localRun.hintUsed) {
+      localRun.hintUsed = true;
+      changed = true;
+    }
+  });
+  Object.entries(state.currentWord.runs).forEach(([playerId, localRun]) => {
+    if (remoteRuns[playerId]) return;
+    if (localRun.guesses?.length || localRun.hintUsed || localRun.status !== "playing") shouldRepublish = true;
+  });
+  return { changed, shouldRepublish };
+}
+
+function mergeDoodles(remoteDoodles) {
+  if (!remoteDoodles || remoteDoodles.dateKey !== state.currentWord.dateKey || !Array.isArray(remoteDoodles.paths)) return { changed: false, shouldRepublish: false };
+  const remoteClearedAt = remoteDoodles.clearedAt || 0;
+  const localClearedAt = state.doodles.clearedAt || 0;
+  if (remoteClearedAt > localClearedAt) {
+    state.doodles = { dateKey: remoteDoodles.dateKey, paths: normalizeDoodlePaths(remoteDoodles.paths), clearedAt: remoteClearedAt };
+    return { changed: true, shouldRepublish: false };
+  }
+
+  const localPaths = normalizeDoodlePaths(state.doodles.paths);
+  const byId = new Map(localPaths.map((path) => [path.id, path]));
+  let changed = false;
+  normalizeDoodlePaths(remoteDoodles.paths).forEach((path) => {
+    if (byId.has(path.id)) return;
+    byId.set(path.id, path);
+    changed = true;
+  });
+  const shouldRepublish = localPaths.length > remoteDoodles.paths.length;
+  state.doodles = { dateKey: remoteDoodles.dateKey, paths: [...byId.values()], clearedAt: localClearedAt };
+  return { changed, shouldRepublish };
+}
+
+function applySharedSnapshot(rawSnapshot) {
+  if (!rawSnapshot) return;
+  let snapshot;
+  try {
+    snapshot = typeof rawSnapshot === "string" ? JSON.parse(rawSnapshot) : rawSnapshot;
+  } catch {
+    return;
+  }
+  if (!snapshot || snapshot.clientId === clientId || snapshot.updatedAt < lastSharedUpdate) return;
+  lastSharedUpdate = snapshot.updatedAt || Date.now();
+  isApplyingSharedState = true;
+  let changed = false;
+  let shouldRepublish = false;
+
+  const remoteIsDifferentBoard = snapshot.currentWord?.word
+    && (snapshot.currentWord.word !== state.currentWord?.word || snapshot.currentWord.dateKey !== state.currentWord?.dateKey);
+  if (remoteIsDifferentBoard) {
+    state.currentWord = snapshot.currentWord;
+    state.usedWords = Array.isArray(snapshot.usedWords) ? snapshot.usedWords : state.usedWords;
+    if (Array.isArray(snapshot.players)) state.players = snapshot.players;
+    state.doodles = snapshot.doodles && Array.isArray(snapshot.doodles.paths)
+      ? { dateKey: snapshot.doodles.dateKey, paths: normalizeDoodlePaths(snapshot.doodles.paths), clearedAt: snapshot.doodles.clearedAt || 0 }
+      : { dateKey: state.currentWord.dateKey, paths: [], clearedAt: 0 };
+    ensureUniquePlayerEmojis();
+    currentGuess = "";
+    changed = true;
+  } else if (snapshot.currentWord?.runs) {
+    changed = mergeUsedWords(snapshot.usedWords) || changed;
+    changed = mergePlayers(snapshot.players) || changed;
+    const runMerge = mergeRuns(snapshot.currentWord.runs);
+    const doodleMerge = mergeDoodles(snapshot.doodles);
+    changed = runMerge.changed || doodleMerge.changed || changed;
+    shouldRepublish = runMerge.shouldRepublish || doodleMerge.shouldRepublish;
+  }
+
+  if (changed) {
+    activeDoodlePath = null;
+    saveState();
+    render();
+    drawDoodles();
+  }
+  isApplyingSharedState = false;
+  if (shouldRepublish) publishSharedState();
+}
+
+function initSharedSync() {
+  if (!window.Gun) return;
+  const gun = window.Gun({ peers: [SHARED_RELAY_URL] });
+  sharedNode = gun.get(SHARED_ROOM_KEY).get("snapshot");
+  sharedNode.on(applySharedSnapshot);
+  setTimeout(() => {
+    if (!lastSharedUpdate) publishSharedState();
+  }, 1200);
+}
+
 function startDoodle(event) {
   if (!doodleEnabled || !els.articlePanel.hidden) return;
   event.preventDefault();
   doodlePointerId = event.pointerId;
   els.doodleCanvas.setPointerCapture(doodlePointerId);
-  activeDoodlePath = { color: doodleColor, points: [doodlePointFromEvent(event)] };
+  activeDoodlePath = { id: newDoodlePathId(), color: doodleColor, points: [doodlePointFromEvent(event)] };
 }
 
 function moveDoodle(event) {
@@ -863,6 +1064,7 @@ function chooseMember(playerId) {
   state.activePlayerId = playerId;
   currentGuess = "";
   render();
+  publishSharedState();
 }
 
 function renderIdentityGate(forceOpen = false) {
@@ -893,6 +1095,7 @@ function renderEmojiGrid() {
       active.emoji = emoji;
       els.emojiGrid.hidden = true;
       render();
+      publishSharedState();
     });
     els.emojiGrid.append(button);
   });
@@ -1374,6 +1577,7 @@ els.hintButton.addEventListener("click", () => {
   run.hintUsed = true;
   if (effectiveAttempts(run) >= MAX_ATTEMPTS) completeRun(run, false);
   render();
+  publishSharedState();
 });
 
 els.resetGameButton.addEventListener("click", () => {
@@ -1414,6 +1618,7 @@ els.pencilToggle.addEventListener("click", () => {
 els.clearDoodlesButton.addEventListener("click", () => {
   ensureDoodleState(state.currentWord.dateKey);
   state.doodles.paths = [];
+  state.doodles.clearedAt = Date.now();
   activeDoodlePath = null;
   saveState();
   broadcastDoodles();
@@ -1457,4 +1662,5 @@ if ("BroadcastChannel" in window) {
 new ResizeObserver(resizeDoodleCanvas).observe(els.gamePlayArea);
 
 render();
+initSharedSync();
 loadHeadlines();
