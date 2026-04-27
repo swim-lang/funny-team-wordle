@@ -45,20 +45,24 @@ const WEATHER_CODES = {
   99: "Storms + hail",
 };
 const HEADLINE_SOURCES = [
-  { name: "TMZ", feedUrl: "https://www.tmz.com/rss.xml", homeUrl: "https://www.tmz.com/", limit: 10 },
-  { name: "Google News", feedUrl: "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", limit: 16 },
-  { name: "Denver Local", feedUrl: "https://news.google.com/rss/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", limit: 12 },
-  { name: "OpenAI", feedUrl: "https://openai.com/news/rss.xml", homeUrl: "https://openai.com/news/", limit: 8 },
-  { name: "AI Labs", feedUrl: "https://news.google.com/rss/search?q=OpenAI%20OR%20Anthropic%20OR%20Claude%20OR%20GPT%20OR%20ElevenLabs%20OR%20Runway%20AI%20OR%20Lovable%20AI&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=OpenAI%20Anthropic%20Claude%20GPT%20ElevenLabs%20Runway%20Lovable&hl=en-US&gl=US&ceid=US:en", limit: 16 },
-  { name: "Google + Apple", feedUrl: "https://news.google.com/rss/search?q=Google%20AI%20OR%20Apple%20AI&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=Google%20AI%20Apple%20AI&hl=en-US&gl=US&ceid=US:en", limit: 10 },
-  { name: "AI News", feedUrl: "https://news.google.com/rss/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", limit: 12 },
-  { name: "Design", feedUrl: "https://news.google.com/rss/search?q=%22The%20Brand%20Identity%22%20OR%20Pentagram%20design%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=%22The%20Brand%20Identity%22%20Pentagram%20design%20news&hl=en-US&gl=US&ceid=US:en", limit: 8 },
-  { name: "Movie News", feedUrl: "https://news.google.com/rss/search?q=movie%20news%20OR%20film%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=movie%20news%20film%20news&hl=en-US&gl=US&ceid=US:en", limit: 12 },
+  { name: "TMZ", category: "entertainment", feedUrl: "https://www.tmz.com/rss.xml", homeUrl: "https://www.tmz.com/", limit: 8 },
+  { name: "IMDb", category: "entertainment", feedUrl: "https://news.google.com/rss/search?q=IMDb%20movie%20TV%20entertainment%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=IMDb%20movie%20TV%20entertainment%20news&hl=en-US&gl=US&ceid=US:en", limit: 8 },
+  { name: "Movie News", category: "entertainment", feedUrl: "https://news.google.com/rss/search?q=movie%20news%20OR%20film%20news%20OR%20TV%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=movie%20news%20film%20news%20TV%20news&hl=en-US&gl=US&ceid=US:en", limit: 10 },
+  { name: "Google News", category: "general", feedUrl: "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", limit: 10 },
+  { name: "Denver Local", category: "local", feedUrl: "https://news.google.com/rss/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", limit: 8 },
+  { name: "OpenAI", category: "ai", feedUrl: "https://openai.com/news/rss.xml", homeUrl: "https://openai.com/news/", limit: 5 },
+  { name: "AI Labs", category: "ai", feedUrl: "https://news.google.com/rss/search?q=OpenAI%20OR%20Anthropic%20OR%20Claude%20OR%20GPT%20OR%20ElevenLabs%20OR%20Runway%20AI%20OR%20Lovable%20AI&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=OpenAI%20Anthropic%20Claude%20GPT%20ElevenLabs%20Runway%20Lovable&hl=en-US&gl=US&ceid=US:en", limit: 8 },
+  { name: "Google + Apple", category: "tech", feedUrl: "https://news.google.com/rss/search?q=Google%20AI%20OR%20Apple%20AI&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=Google%20AI%20Apple%20AI&hl=en-US&gl=US&ceid=US:en", limit: 6 },
+  { name: "AI News", category: "ai", feedUrl: "https://news.google.com/rss/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", limit: 6 },
+  { name: "Design", category: "design", feedUrl: "https://news.google.com/rss/search?q=%22The%20Brand%20Identity%22%20OR%20Pentagram%20design%20news&hl=en-US&gl=US&ceid=US:en", homeUrl: "https://news.google.com/search?q=%22The%20Brand%20Identity%22%20Pentagram%20design%20news&hl=en-US&gl=US&ceid=US:en", limit: 6 },
 ];
+const HEADLINE_CATEGORY_ROTATION = ["entertainment", "ai", "general", "entertainment", "local", "tech", "entertainment", "design"];
 const FALLBACK_HEADLINES = [
-  { source: "TMZ", title: "Celebrity chaos pending refresh", link: "https://www.tmz.com/", summary: "TMZ headlines are taking a dramatic little lap before loading.", body: "TMZ headlines are taking a dramatic little lap before loading." },
-  { source: "Google News", title: "Top stories are warming up", link: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", summary: "Google News is loading the main headlines.", body: "Google News is loading the main headlines." },
-  { source: "Denver Local", title: "Denver local headlines loading", link: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", summary: "Denver-area headlines are getting in line.", body: "Denver-area headlines are getting in line." },
+  { source: "TMZ", category: "entertainment", title: "Celebrity chaos pending refresh", link: "https://www.tmz.com/", summary: "TMZ headlines are taking a dramatic little lap before loading.", body: "TMZ headlines are taking a dramatic little lap before loading." },
+  { source: "AI Labs", category: "ai", title: "AI headlines are warming up", link: "https://news.google.com/search?q=artificial%20intelligence%20news&hl=en-US&gl=US&ceid=US:en", summary: "AI headlines are loading into the rotation.", body: "AI headlines are loading into the rotation." },
+  { source: "Movie News", category: "entertainment", title: "Movie headlines are finding seats", link: "https://news.google.com/search?q=movie%20news%20film%20news&hl=en-US&gl=US&ceid=US:en", summary: "Entertainment headlines are joining the ticker.", body: "Entertainment headlines are joining the ticker." },
+  { source: "Google News", category: "general", title: "Top stories are warming up", link: "https://news.google.com/home?hl=en-US&gl=US&ceid=US:en", summary: "Google News is loading the main headlines.", body: "Google News is loading the main headlines." },
+  { source: "Denver Local", category: "local", title: "Denver local headlines loading", link: "https://news.google.com/search?q=Denver%20Colorado&hl=en-US&gl=US&ceid=US:en", summary: "Denver-area headlines are getting in line.", body: "Denver-area headlines are getting in line." },
 ];
 const DAILY_TRIVIA = [
   { question: "How many bones are in a giraffe's neck?", answer: "Seven" },
@@ -1108,6 +1112,7 @@ function parseHeadlines(xmlText, source) {
       const rawStory = item.querySelector("content\\:encoded")?.textContent || item.querySelector("description")?.textContent || "";
       return {
         source: source.name,
+        category: source.category,
         title: decodeHeadline(item.querySelector("title")?.textContent?.trim() || ""),
         link: item.querySelector("link")?.textContent?.trim() || source.homeUrl,
         summary: trimSummary(rawStory),
@@ -1125,6 +1130,7 @@ function parseJsonHeadlines(feed, source) {
       const rawStory = item.content || item.description || item.contentSnippet || "";
       return {
         source: source.name,
+        category: source.category,
         title: decodeHeadline(item.title || ""),
         link: item.link || source.homeUrl,
         summary: trimSummary(rawStory),
@@ -1143,6 +1149,27 @@ function uniqueHeadlines(headlines) {
     seen.add(key);
     return true;
   });
+}
+
+function balancedHeadlines(headlines) {
+  const buckets = new Map();
+  headlines.forEach((item) => {
+    const category = item.category || "general";
+    if (!buckets.has(category)) buckets.set(category, []);
+    buckets.get(category).push(item);
+  });
+
+  const balanced = [];
+  while ([...buckets.values()].some((items) => items.length)) {
+    HEADLINE_CATEGORY_ROTATION.forEach((category) => {
+      const bucket = buckets.get(category);
+      if (bucket?.length) balanced.push(bucket.shift());
+    });
+    buckets.forEach((bucket, category) => {
+      if (!HEADLINE_CATEGORY_ROTATION.includes(category) && bucket.length) balanced.push(bucket.shift());
+    });
+  }
+  return balanced;
 }
 
 function renderPreviewContent(container, item) {
@@ -1263,7 +1290,7 @@ async function loadHeadlinesForSource(source) {
 
 async function loadHeadlines() {
   const sourceResults = await Promise.all(HEADLINE_SOURCES.map(loadHeadlinesForSource));
-  renderHeadlines(uniqueHeadlines(sourceResults.flat()));
+  renderHeadlines(balancedHeadlines(uniqueHeadlines(sourceResults.flat())));
 }
 
 function handleKey(key) {
