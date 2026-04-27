@@ -3,8 +3,13 @@ const MAX_ATTEMPTS = 6;
 const STORAGE_KEY = "funny-team-wordle-v3";
 const TRIVIA_REVEAL_KEY = "funny-team-wordle-trivia-reveal-date";
 const CLIENT_ID_KEY = "funny-team-wordle-client-id";
-const SHARED_ROOM_KEY = "anchovies-wordle-main-v1";
-const SHARED_RELAY_URL = "https://gun.o8.is/gun";
+const SHARED_ROOM_KEY = sharedRoomKey();
+const DEFAULT_SHARED_RELAY_URLS = [
+  "https://gun.o8.is/gun",
+  "https://gun-manhattan.herokuapp.com/gun",
+  "https://gun-us.herokuapp.com/gun",
+];
+const SHARED_RELAY_URLS = sharedRelayUrls();
 const DAILY_EPOCH = "2026-04-26";
 const TEAM_MEMBERS = ["Kira", "Sean", "Logan", "Alexis"];
 const WEATHER_LOCATIONS = {
@@ -206,7 +211,6 @@ let doodleChannel = null;
 let gameChannel = null;
 let activeWeatherKey = "";
 let sharedNode = null;
-let sharedPublishTimer = null;
 let isApplyingSharedState = false;
 let lastSharedUpdate = 0;
 const clientId = getClientId();
@@ -273,6 +277,16 @@ const els = {
   headlinePreview: document.querySelector("#headlinePreview"),
   leaderboardList: document.querySelector("#leaderboardList"),
 };
+
+function sharedRoomKey() {
+  const room = new URLSearchParams(window.location.search).get("room") || "main-v1";
+  return `anchovies-wordle-${room.replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "main-v1"}`;
+}
+
+function sharedRelayUrls() {
+  const peers = new URLSearchParams(window.location.search).getAll("peer").filter(Boolean);
+  return peers.length ? peers : DEFAULT_SHARED_RELAY_URLS;
+}
 
 function getClientId() {
   let id = localStorage.getItem(CLIENT_ID_KEY);
@@ -881,12 +895,9 @@ function sharedSnapshot() {
 
 function publishSharedState() {
   if (!sharedNode || isApplyingSharedState) return;
-  clearTimeout(sharedPublishTimer);
-  sharedPublishTimer = setTimeout(() => {
-    const snapshot = sharedSnapshot();
-    lastSharedUpdate = Math.max(lastSharedUpdate, snapshot.updatedAt);
-    sharedNode.put(JSON.stringify(snapshot));
-  }, 120);
+  const snapshot = sharedSnapshot();
+  lastSharedUpdate = Math.max(lastSharedUpdate, snapshot.updatedAt);
+  sharedNode.put({ json: JSON.stringify(snapshot) });
 }
 
 function mergeUsedWords(remoteUsedWords) {
@@ -977,11 +988,12 @@ function applySharedSnapshot(rawSnapshot) {
   if (!rawSnapshot) return;
   let snapshot;
   try {
-    snapshot = typeof rawSnapshot === "string" ? JSON.parse(rawSnapshot) : rawSnapshot;
+    const snapshotJson = typeof rawSnapshot === "string" ? rawSnapshot : rawSnapshot.json;
+    snapshot = typeof snapshotJson === "string" ? JSON.parse(snapshotJson) : rawSnapshot;
   } catch {
     return;
   }
-  if (!snapshot || snapshot.clientId === clientId || snapshot.updatedAt < lastSharedUpdate) return;
+  if (!snapshot?.clientId || snapshot.clientId === clientId) return;
   lastSharedUpdate = snapshot.updatedAt || Date.now();
   isApplyingSharedState = true;
   let changed = false;
@@ -1020,7 +1032,7 @@ function applySharedSnapshot(rawSnapshot) {
 
 function initSharedSync() {
   if (!window.Gun) return;
-  const gun = window.Gun({ peers: [SHARED_RELAY_URL] });
+  const gun = window.Gun(SHARED_RELAY_URLS);
   sharedNode = gun.get(SHARED_ROOM_KEY).get("snapshot");
   sharedNode.on(applySharedSnapshot);
   setTimeout(() => {
@@ -1563,6 +1575,7 @@ function submitGuess() {
   }
   currentGuess = "";
   render();
+  publishSharedState();
 }
 
 function completeRun(run, won) {
