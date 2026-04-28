@@ -1,6 +1,6 @@
 const WORD_LENGTH = 5;
 const MAX_ATTEMPTS = 6;
-const STORAGE_KEY = "funny-team-wordle-v3";
+const STORAGE_KEY = "funny-team-wordle-v4";
 const TRIVIA_REVEAL_KEY = "funny-team-wordle-trivia-reveal-date";
 const CLIENT_ID_KEY = "funny-team-wordle-client-id";
 const SHARED_ROOM_KEY = sharedRoomKey();
@@ -211,6 +211,7 @@ let doodleChannel = null;
 let gameChannel = null;
 let activeWeatherKey = "";
 let sharedNode = null;
+let sharedRunsNode = null;
 let isApplyingSharedState = false;
 let lastSharedUpdate = 0;
 const clientId = getClientId();
@@ -254,6 +255,7 @@ const els = {
   articleLink: document.querySelector("#articleLink"),
   articleCloseButton: document.querySelector("#articleCloseButton"),
   hintBox: document.querySelector("#hintBox"),
+  answerBox: document.querySelector("#answerBox"),
   hintButton: document.querySelector("#hintButton"),
   resetGameButton: document.querySelector("#resetGameButton"),
   dayLabel: document.querySelector("#dayLabel"),
@@ -279,8 +281,8 @@ const els = {
 };
 
 function sharedRoomKey() {
-  const room = new URLSearchParams(window.location.search).get("room") || "main-v1";
-  return `anchovies-wordle-${room.replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "main-v1"}`;
+  const room = new URLSearchParams(window.location.search).get("room") || "main-v2";
+  return `anchovies-wordle-${room.replace(/[^a-z0-9-]/gi, "").slice(0, 40) || "main-v2"}`;
 }
 
 function sharedRelayUrls() {
@@ -522,6 +524,10 @@ function canGuessThisLine(run) {
   return run.status === "playing" && run.guesses.length === currentLineIndex();
 }
 
+function isRoundComplete() {
+  return state.players.every((player) => runForPlayer(player.id).status !== "playing");
+}
+
 function lettersFound(run) {
   const found = new Set();
   run.guesses.forEach((guess) => {
@@ -547,6 +553,8 @@ function render() {
   ensureDoodleState(state.currentWord.dateKey);
   els.hintBox.hidden = !run.hintUsed;
   els.hintBox.textContent = run.hintUsed ? state.currentWord.hint : "";
+  els.answerBox.hidden = !isRoundComplete();
+  els.answerBox.textContent = isRoundComplete() ? `Answer: ${state.currentWord.word}` : "";
   els.hintButton.disabled = run.hintUsed || !canGuess;
   els.gamePlayArea.classList.toggle("is-waiting", run.status === "playing" && !canGuess);
   renderIdentityGate();
@@ -879,10 +887,11 @@ function applySyncedGameReset(payload) {
 }
 
 function sharedSnapshot() {
+  const { runs, ...currentWord } = state.currentWord;
   return {
     clientId,
     updatedAt: Date.now(),
-    currentWord: state.currentWord,
+    currentWord: { ...currentWord, runs: {} },
     usedWords: state.usedWords,
     players: state.players,
     doodles: {
@@ -898,6 +907,33 @@ function publishSharedState() {
   const snapshot = sharedSnapshot();
   lastSharedUpdate = Math.max(lastSharedUpdate, snapshot.updatedAt);
   sharedNode.put({ json: JSON.stringify(snapshot) });
+  publishSharedRuns();
+}
+
+function sharedRunPayload(playerId) {
+  const run = state.currentWord.runs?.[playerId];
+  if (!run) return null;
+  return {
+    clientId,
+    updatedAt: Date.now(),
+    playerId,
+    word: state.currentWord.word,
+    dateKey: state.currentWord.dateKey,
+    startedAt: state.currentWord.startedAt,
+    run,
+  };
+}
+
+function publishSharedRun(playerId) {
+  if (!sharedRunsNode || isApplyingSharedState) return;
+  const payload = sharedRunPayload(playerId);
+  if (!payload) return;
+  sharedRunsNode.get(playerId).put({ json: JSON.stringify(payload) });
+}
+
+function publishSharedRuns() {
+  if (!sharedRunsNode || isApplyingSharedState) return;
+  state.players.forEach((player) => publishSharedRun(player.id));
 }
 
 function mergeUsedWords(remoteUsedWords) {
@@ -960,6 +996,42 @@ function mergeRuns(remoteRuns = {}) {
     if (localRun.guesses?.length || localRun.hintUsed || localRun.status !== "playing") shouldRepublish = true;
   });
   return { changed, shouldRepublish };
+}
+
+function runsEqual(runA, runB) {
+  return JSON.stringify(runA || {}) === JSON.stringify(runB || {});
+}
+
+function applySharedRun(playerId, rawPayload) {
+  if (!rawPayload) return;
+  let payload;
+  try {
+    const payloadJson = typeof rawPayload === "string" ? rawPayload : rawPayload.json;
+    payload = typeof payloadJson === "string" ? JSON.parse(payloadJson) : rawPayload;
+  } catch {
+    return;
+  }
+  if (!payload?.run || payload.clientId === clientId || payload.word !== state.currentWord.word || payload.dateKey !== state.currentWord.dateKey) return;
+
+  const localRun = state.currentWord.runs[playerId] || { guesses: [], hintUsed: false, status: "playing" };
+  const remoteRun = payload.run;
+  const remoteGuessCount = Array.isArray(remoteRun.guesses) ? remoteRun.guesses.length : 0;
+  const localGuessCount = Array.isArray(localRun.guesses) ? localRun.guesses.length : 0;
+  const remoteIsAhead = remoteGuessCount > localGuessCount || (remoteRun.status !== "playing" && localRun.status === "playing");
+  const localIsAhead = localGuessCount > remoteGuessCount || (localRun.status !== "playing" && remoteRun.status === "playing");
+
+  if (remoteIsAhead || (!localIsAhead && !runsEqual(localRun, remoteRun))) {
+    state.currentWord.runs[playerId] = {
+      guesses: Array.isArray(remoteRun.guesses) ? remoteRun.guesses : [],
+      hintUsed: Boolean(remoteRun.hintUsed),
+      status: remoteRun.status || "playing",
+    };
+    saveState();
+    render();
+    return;
+  }
+
+  if (localIsAhead) publishSharedRun(playerId);
 }
 
 function mergeDoodles(remoteDoodles) {
@@ -1033,8 +1105,13 @@ function applySharedSnapshot(rawSnapshot) {
 function initSharedSync() {
   if (!window.Gun) return;
   const gun = window.Gun(SHARED_RELAY_URLS);
-  sharedNode = gun.get(SHARED_ROOM_KEY).get("snapshot");
+  const roomNode = gun.get(SHARED_ROOM_KEY);
+  sharedNode = roomNode.get("snapshot");
+  sharedRunsNode = roomNode.get("runs");
   sharedNode.on(applySharedSnapshot);
+  state.players.forEach((player) => {
+    sharedRunsNode.get(player.id).on((event) => applySharedRun(player.id, event));
+  });
   setTimeout(() => {
     if (!lastSharedUpdate) publishSharedState();
   }, 1200);

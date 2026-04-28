@@ -204,7 +204,8 @@ button:disabled {
 
 .player-card,
 .leaderboard,
-.hint-box {
+.hint-box,
+.answer-box {
   border: 3px solid var(--ink);
   background: var(--panel-soft);
   padding: 14px;
@@ -405,12 +406,17 @@ input {
   pointer-events: auto;
 }
 
-.hint-box {
+.hint-box,
+.answer-box {
   position: relative;
   z-index: 1;
   background: var(--hint-bg);
   text-align: center;
   text-transform: uppercase;
+}
+
+.answer-box {
+  background: var(--lime);
 }
 
 .board {
