@@ -318,11 +318,33 @@ function blankTeamPlayer(name) {
     id: memberId(name),
     name,
     emoji: randomEmoji(),
+    stats: defaultPlayerStats(),
   };
 }
 
 function createTeamPlayers() {
   return TEAM_MEMBERS.map(blankTeamPlayer);
+}
+
+function defaultPlayerStats() {
+  return {
+    played: 0,
+    wins: 0,
+    streak: 0,
+    updatedAt: 0,
+    lastCompletedStartedAt: null,
+  };
+}
+
+function normalizePlayerStats(player = {}) {
+  const stats = player.stats || {};
+  return {
+    played: Math.max(0, Number(stats.played ?? player.played ?? 0) || 0),
+    wins: Math.max(0, Number(stats.wins ?? player.wins ?? 0) || 0),
+    streak: Math.max(0, Number(stats.streak ?? player.streak ?? 0) || 0),
+    updatedAt: Number(stats.updatedAt ?? 0) || 0,
+    lastCompletedStartedAt: stats.lastCompletedStartedAt || null,
+  };
 }
 
 function normalizeState() {
@@ -336,8 +358,13 @@ function normalizeState() {
     : { dateKey: null, paths: [], clearedAt: 0 };
   const savedPlayers = new Map((Array.isArray(state.players) ? state.players : []).map((player) => [player.id, player]));
   state.players = createTeamPlayers().map((player) => {
-    const savedEmoji = savedPlayers.get(player.id)?.emoji;
-    return { ...player, emoji: EMOJIS.includes(savedEmoji) ? savedEmoji : player.emoji };
+    const savedPlayer = savedPlayers.get(player.id);
+    const savedEmoji = savedPlayer?.emoji;
+    return {
+      ...player,
+      emoji: EMOJIS.includes(savedEmoji) ? savedEmoji : player.emoji,
+      stats: normalizePlayerStats(savedPlayer || player),
+    };
   });
   state.activePlayerId = state.players.some((player) => player.id === state.activePlayerId) ? state.activePlayerId : state.selectedMemberId;
   state.selectedMemberId = state.players.some((player) => player.id === state.selectedMemberId) ? state.selectedMemberId : null;
@@ -672,6 +699,11 @@ function playerResultLabel(run) {
   return `TURN ${currentLineIndex() + 1}`;
 }
 
+function playerStatsLine(player) {
+  const stats = normalizePlayerStats(player);
+  return `${stats.wins}W · ${stats.played} played · ${stats.streak} streak`;
+}
+
 let audioContext = null;
 
 function getAudioContext() {
@@ -979,9 +1011,22 @@ function mergePlayers(remotePlayers) {
   let changed = false;
   state.players = state.players.map((player) => {
     const remote = remoteById.get(player.id);
-    if (!remote || remote.emoji === player.emoji) return player;
-    changed = true;
-    return { ...player, emoji: remote.emoji };
+    if (!remote) return player;
+    const remoteStats = normalizePlayerStats(remote);
+    const localStats = normalizePlayerStats(player);
+    const nextPlayer = { ...player };
+    if (remote.emoji && remote.emoji !== player.emoji) {
+      nextPlayer.emoji = remote.emoji;
+      changed = true;
+    }
+    const remoteHasNewerStats = remoteStats.updatedAt > localStats.updatedAt;
+    const remoteHasBiggerTotals = remoteStats.updatedAt === localStats.updatedAt
+      && (remoteStats.played > localStats.played || remoteStats.wins > localStats.wins || remoteStats.streak > localStats.streak);
+    if (remoteHasNewerStats || remoteHasBiggerTotals) {
+      nextPlayer.stats = remoteStats;
+      changed = true;
+    }
+    return nextPlayer;
   });
   ensureUniquePlayerEmojis();
   return changed;
@@ -1298,7 +1343,13 @@ function renderLeaderboard() {
   rows.forEach(({ player, run }) => {
     const row = document.createElement("div");
     row.className = `leaderboard-row ${player.id === activePlayer().id ? "is-active" : ""}`;
-    row.innerHTML = `<strong>${player.emoji} ${player.name}</strong><small>${playerResultLabel(run)} · ${lettersFound(run)}/${WORD_LENGTH} letters</small>`;
+    row.innerHTML = `
+      <div class="leaderboard-copy">
+        <strong>${player.emoji} ${player.name}</strong>
+        <small class="profile-stats">${playerStatsLine(player)}</small>
+      </div>
+      <small>${playerResultLabel(run)} · ${lettersFound(run)}/${WORD_LENGTH} letters</small>
+    `;
     els.leaderboardList.append(row);
   });
 }
@@ -1693,6 +1744,19 @@ function submitGuess() {
 function completeRun(run, won) {
   if (run.status !== "playing") return;
   run.status = won ? "won" : "lost";
+  recordPlayerStats(activePlayer().id, won);
+}
+
+function recordPlayerStats(playerId, won) {
+  const player = state.players.find((candidate) => candidate.id === playerId);
+  if (!player || player.stats?.lastCompletedStartedAt === state.currentWord.startedAt) return;
+  const stats = normalizePlayerStats(player);
+  stats.played += 1;
+  stats.wins += won ? 1 : 0;
+  stats.streak = won ? stats.streak + 1 : 0;
+  stats.updatedAt = Date.now();
+  stats.lastCompletedStartedAt = state.currentWord.startedAt;
+  player.stats = stats;
 }
 
 els.hintButton.addEventListener("click", () => {

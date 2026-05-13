@@ -331,6 +331,19 @@ input {
   gap: 10px;
 }
 
+.leaderboard-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.leaderboard-copy .profile-stats {
+  color: var(--gray);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
 .leaderboard-row.is-active {
   background: var(--panel-soft);
 }
